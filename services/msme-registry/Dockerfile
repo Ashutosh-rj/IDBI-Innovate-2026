@@ -6,7 +6,7 @@ COPY consent-aa consent-aa
 COPY ingestion ingestion
 COPY msme-registry msme-registry
 COPY health-card health-card
-RUN mvn clean package -pl msme-registry -am -DskipTests --no-transfer-progress
+RUN --mount=type=cache,target=/root/.m2/repository mvn clean package -pl msme-registry -am -DskipTests --no-transfer-progress -Dmaven.resolver.transport=wagon -Dmaven.wagon.http.retryHandler.count=3
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
