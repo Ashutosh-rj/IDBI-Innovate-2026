@@ -1,0 +1,16 @@
+{
+  "name": "msme-health-score-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "IDBI Innovate 2026 — Track 03: MSME Financial Health Score Platform (Monorepo Root)",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "dev:banker": "npm run dev --workspace=banker-dashboard",
+    "dev:pwa": "npm run dev --workspace=msme-pwa",
+    "build:all": "npm run build --workspaces",
+    "lint:all": "npm run lint --workspaces"
+  }
+}
