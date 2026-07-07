@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PortfolioOverview } from './components/PortfolioOverview';
 import { MsmeTable } from './components/MsmeTable';
@@ -6,12 +6,50 @@ import { ScorecardView } from './components/ScorecardView';
 import { WhatIfSimulator } from './components/WhatIfSimulator';
 import { MOCK_COHORT } from './data/mockCohort';
 import type { MsmeProfile } from './types';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, AlertCircle } from 'lucide-react';
+import { fetchLiveCohort } from './services/apiClient';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [selectedMsme, setSelectedMsme] = useState<MsmeProfile | null>(null);
   const [isLiveApi, setIsLiveApi] = useState<boolean>(false);
+  const [cohortData, setCohortData] = useState<MsmeProfile[]>(MOCK_COHORT);
+  const [isLoadingLive, setIsLoadingLive] = useState<boolean>(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isLiveApi) {
+      setIsLoadingLive(true);
+      setLiveError(null);
+      fetchLiveCohort(MOCK_COHORT)
+        .then((liveProfiles) => {
+          if (isMounted) {
+            setCohortData(liveProfiles);
+            setIsLoadingLive(false);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setLiveError("Failed to connect to live gateway (:8080). Displaying fallback cohort.");
+            setIsLoadingLive(false);
+          }
+        });
+    } else {
+      setCohortData(MOCK_COHORT);
+      setLiveError(null);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isLiveApi]);
+
+  useEffect(() => {
+    if (selectedMsme) {
+      const updated = cohortData.find((m) => m.msmeId === selectedMsme.msmeId);
+      if (updated) setSelectedMsme(updated);
+    }
+  }, [cohortData]);
 
   const handleSelectMsme = (msme: MsmeProfile) => {
     setSelectedMsme(msme);
@@ -43,38 +81,59 @@ export default function App() {
         {/* Banner Alert for Demo Status */}
         <div className="p-4 bg-gradient-to-r from-idbi-navy/80 via-slate-900 to-slate-900 border border-idbi-cyan/30 rounded-2xl flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            <div className={`w-2.5 h-2.5 rounded-full ${isLiveApi ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
             <p className="text-xs md:text-sm text-slate-200 font-medium">
               <strong className="text-idbi-cyan">IDBI Innovate 2026 Audit-Grade POC:</strong> Operating on 100% real computations & TreeSHAP explainability. Zero hardcoded scores.
             </p>
           </div>
           <span className="text-xs font-mono text-slate-400 hidden sm:inline">
-            Mode: {isLiveApi ? 'Live Gateway (:8080)' : 'SGSDG Audit Cohort'}
+            Mode: {isLiveApi ? 'Live Gateway (:8080 / :8000)' : 'SGSDG Audit Cohort (Local)'}
           </span>
         </div>
 
-        {/* Tab Routing */}
-        {activeTab === 'overview' && (
-          <PortfolioOverview cohort={MOCK_COHORT} onSelectMsme={handleSelectMsme} />
+        {liveError && (
+          <div className="p-4 bg-rose-950/40 border border-rose-500/50 rounded-xl flex items-center gap-3 text-rose-200 text-sm">
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            <span>{liveError}</span>
+          </div>
         )}
 
-        {activeTab === 'directory' && (
-          <MsmeTable cohort={MOCK_COHORT} onSelectMsme={handleSelectMsme} />
-        )}
+        {/* Tab Routing with Live Loading State */}
+        {isLoadingLive ? (
+          <div className="flex flex-col items-center justify-center py-24 space-y-4 bg-slate-900/40 border border-idbi-cyan/20 rounded-2xl shadow-xl backdrop-blur">
+            <div className="w-10 h-10 border-4 border-idbi-cyan border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-medium text-slate-200">
+              Connecting to Live API Gateway (:8080) & Executing TreeSHAP Inference...
+            </p>
+            <p className="text-xs text-slate-400">
+              Computing multi-stream alternate data features across GST, UPI, AA, and EPFO.
+            </p>
+          </div>
+        ) : (
+          <>
+            {activeTab === 'overview' && (
+              <PortfolioOverview cohort={cohortData} onSelectMsme={handleSelectMsme} />
+            )}
 
-        {activeTab === 'scorecard' && selectedMsme && (
-          <ScorecardView
-            msme={selectedMsme}
-            onBack={() => setActiveTab('directory')}
-            onSimulate={handleSimulateMsme}
-          />
-        )}
+            {activeTab === 'directory' && (
+              <MsmeTable cohort={cohortData} onSelectMsme={handleSelectMsme} />
+            )}
 
-        {activeTab === 'simulate' && (
-          <WhatIfSimulator
-            msme={selectedMsme || MOCK_COHORT[0]}
-            onClose={() => setActiveTab('directory')}
-          />
+            {activeTab === 'scorecard' && selectedMsme && (
+              <ScorecardView
+                msme={selectedMsme}
+                onBack={() => setActiveTab('directory')}
+                onSimulate={handleSimulateMsme}
+              />
+            )}
+
+            {activeTab === 'simulate' && (
+              <WhatIfSimulator
+                msme={selectedMsme || cohortData[0]}
+                onClose={() => setActiveTab('directory')}
+              />
+            )}
+          </>
         )}
       </main>
 
