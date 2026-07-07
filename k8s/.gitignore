@@ -1,0 +1,12 @@
+# Ignore rendered manifests, secrets, and helm archives
+*.tgz
+*.tmp
+*.log
+*.bak
+*.swp
+secret*.yaml
+secret*.yml
+kubeconfig*
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,8 @@
+# Ignore local runner logs and downloaded artifacts
+*.log
+*.zip
+*.tar.gz
+*.tmp
+*.bak
+*.swp
+.DS_Store

@@ -9,9 +9,13 @@ lerna-debug.log*
 .pnpm-store/
 
 # Dependencies
-node_modules
-dist
-dist-ssr
+node_modules/
+jspm_packages/
+web_modules/
+dist/
+dist-ssr/
+build/
+out/
 *.local
 
 # Cache & Build Info
@@ -20,19 +24,44 @@ dist-ssr
 *.tsbuildinfo
 .eslintcache
 .stylelintcache
+.next/
+.nuxt/
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# AI & LLM Assistants
+.gemini/
+.cursor/
+.cursorrules
+.copilot*
+.aider*
+*.chat
 
 # Environment
 .env
 .env.*
 !.env.example
+!.env.template
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json
+.idea/
+*.iml
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.tmp
+*.bak

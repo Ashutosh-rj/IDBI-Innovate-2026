@@ -1,0 +1,8 @@
+# Ignore temporary validation and editor files
+*.tmp
+*.log
+*.bak
+*.swp
+.DS_Store
+.idea/
+.vscode/

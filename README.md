@@ -130,14 +130,15 @@ docker-compose up --build -d
 To generate 10,000 stratified MSME profiles (Healthy, Stressed, Seasonal, NTC, High-Growth) and validate them against official JSON schemas:
 ```bash
 python -m venv venv && venv\Scripts\activate
-pip install -r services/scoring-engine/requirements.txt
-python services/scoring-engine/data/generate_and_validate.py --cohort-size 10000 --seed 42 --output-dir data/synthetic_cohort
+pip install -r data-generators/sgsdg/requirements.txt
+PYTHONPATH=data-generators/sgsdg python data-generators/sgsdg/generate_and_validate.py --count 10000 --seed 42 --output data/synthetic_cohort.jsonl
 ```
 
 ### 3. Train ML Models & Run Bake-Off
 To run the XGBoost vs. LightGBM bake-off on the generated cohort and produce the production model artifact:
 ```bash
-PYTHONPATH=services/scoring-engine python services/scoring-engine/ml/train.py --cohort-size 10000 --output-dir services/scoring-engine/models/saved
+pip install -r services/scoring-engine/requirements.txt
+PYTHONPATH=services/scoring-engine:services/scoring-engine/app python services/scoring-engine/ml/train.py --data data/synthetic_cohort.jsonl --output services/scoring-engine/ml/artifacts/model.pkl --report MODEL_CARD.md
 ```
 
 ---

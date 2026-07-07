@@ -1,0 +1,14 @@
+# Ignore local monitoring data volumes and databases
+data/
+promdata/
+grafanadata/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.tmp
+*.bak
+*.swp
+.DS_Store
+.idea/
+.vscode/

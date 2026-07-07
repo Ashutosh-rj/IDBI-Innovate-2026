@@ -60,11 +60,11 @@ jobs:
       - name: Train Bake-off Model & Verify Monotonic Constraints
         run: |
           mkdir -p services/scoring-engine/ml/artifacts
-          PYTHONPATH=services/scoring-engine python services/scoring-engine/ml/train.py --data /tmp/data_ci/cohort.jsonl --output services/scoring-engine/ml/artifacts/model.pkl --report /tmp/MODEL_CARD.md
+          PYTHONPATH=services/scoring-engine:services/scoring-engine/app python services/scoring-engine/ml/train.py --data /tmp/data_ci/cohort.jsonl --output services/scoring-engine/ml/artifacts/model.pkl --report /tmp/MODEL_CARD.md
 
       - name: Run Scoring Engine Unit & API Tests
         run: |
-          PYTHONPATH=services/scoring-engine pytest services/scoring-engine/tests/ -v
+          PYTHONPATH=services/scoring-engine:services/scoring-engine/app pytest services/scoring-engine/tests/ -v
 
   # 3. Build Spring Boot Microservices
   build-spring-services:
