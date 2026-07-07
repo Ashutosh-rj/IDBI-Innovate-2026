@@ -73,8 +73,8 @@ services:
   # 4. Python Scoring Engine (FastAPI + XGBoost + TreeSHAP)
   scoring-engine:
     build:
-      context: ./services/scoring-engine
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/scoring-engine/Dockerfile
     container_name: msme-scoring-engine
     ports:
       - "8000:8000"
@@ -91,8 +91,8 @@ services:
   # 5. MSME Registry Service (Spring Boot)
   msme-registry:
     build:
-      context: ./services/msme-registry
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: msme-registry/Dockerfile
     container_name: msme-registry
     ports:
       - "8081:8081"
@@ -112,8 +112,8 @@ services:
   # 6. Consent & AA Service (Spring Boot - ReBIT AA v2.0)
   consent-aa:
     build:
-      context: ./services/consent-aa
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: consent-aa/Dockerfile
     container_name: msme-consent-aa
     ports:
       - "8082:8082"
@@ -133,8 +133,8 @@ services:
   # 7. Ingestion Service (Spring Boot - Connectors + Kafka Producer)
   ingestion:
     build:
-      context: ./services/ingestion
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: ingestion/Dockerfile
     container_name: msme-ingestion
     ports:
       - "8083:8083"
@@ -150,8 +150,8 @@ services:
   # 8. Health Card Service (Spring Boot - Score Consumer & OCEN Adapter)
   health-card:
     build:
-      context: ./services/health-card
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: health-card/Dockerfile
     container_name: msme-health-card
     ports:
       - "8084:8084"
@@ -172,8 +172,8 @@ services:
   # 9. API Gateway (Spring Cloud Gateway + JWT Auth + Rate Limiting)
   api-gateway:
     build:
-      context: ./services/api-gateway
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: api-gateway/Dockerfile
     container_name: msme-api-gateway
     ports:
       - "8080:8080"

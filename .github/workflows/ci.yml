@@ -24,11 +24,11 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r services/scoring-engine/requirements.txt
+          pip install -r data-generators/sgsdg/requirements.txt
 
       - name: Run SGSDG Generator Validation
         run: |
-          python services/scoring-engine/data/generate_and_validate.py --cohort-size 200 --seed 42 --output-dir /tmp/sgsdg_ci_test
+          PYTHONPATH=data-generators/sgsdg python data-generators/sgsdg/generate_and_validate.py --cohort-size 200 --seed 42 --output-dir /tmp/sgsdg_ci_test
 
   # 2. Test Scoring Engine & TreeSHAP Monotonicity
   test-scoring-engine:
@@ -66,10 +66,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
 

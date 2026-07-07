@@ -4,8 +4,11 @@ __pycache__/
 *$py.class
 *.so
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
+coverage.xml
 .venv/
 venv/
 env/
@@ -23,3 +26,4 @@ data/*.jsonl
 data/*.csv
 data/*.parquet
 /tmp/
+*.log
