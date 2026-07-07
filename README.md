@@ -73,10 +73,10 @@ Our platform replaces static document checks with a **near real-time, multidimen
 | **ML Training & XAI** | XGBoost, LightGBM, SHAP | XGBoost 2.1, LightGBM 4.3, SHAP 0.46 | Industry standard for credit scorecards; native NaN handling for NTC thin-files; exact Shapley attribution. |
 | **Event Backbone** | Apache Kafka (KRaft) | Kafka 3.7.0 (No Zookeeper) | Decouples high-throughput webhook ingestion from ML inference; enables near real-time re-scoring. |
 | **Primary Database** | PostgreSQL | PostgreSQL 16 (`pgcrypto`, `pgvector`) | ACID compliance for financial decisions; JSONB for flexible alt-data; encryption at rest. |
-| **Feature Cache** | Redis | Redis 7.4 | Sub-second sub-score caching with TTL invalidation; guarantees P95 latency < 3s. |
-| **Frontend Applications**| React + Vite + TypeScript| React 18, TypeScript 5, Recharts | Banker dashboard with radar/waterfall charts; MSME Self-Service PWA shell. |
+| **Feature Cache** | Redis | Redis 7-alpine | Sub-second sub-score caching with TTL invalidation; guarantees P95 latency < 3s. |
+| **Frontend Applications**| React + Vite + TypeScript| React 19, Tailwind CSS v4, Recharts | Modern, lightning-fast React 19 architecture with decoupled workspaces; Banker dashboard & MSME Self-Service PWA. |
 | **Observability** | Prometheus + Grafana | Latest | Real-time latency dashboards, JVM metrics, and Population Stability Index (PSI) drift alerts. |
-| **Container & Deploy** | Docker Compose / K8s | Docker, Kubernetes Manifests | Complete E2E local demo via Compose; production scalability proven via K8s deployment manifests. |
+| **Container & Deploy** | Docker Compose / K8s | BuildKit Cache, Kubernetes Manifests | Complete E2E local demo via Compose with `--mount=type=cache` Maven caching and Wagon HTTP retries; production K8s manifests. |
 
 ---
 
@@ -86,14 +86,14 @@ Our platform replaces static document checks with a **near real-time, multidimen
 /msme-health-score
 ├── contracts/v1/                   # Shared JSON Schema contracts (ReBIT, OCEN, GST)
 ├── apps/
-│   ├── banker-dashboard/           # React + Tailwind v4 Banker Dashboard (Port 5173)
-│   └── msme-pwa/                   # React + Tailwind v4 MSME Self-Service PWA (Port 5174)
+│   ├── banker-dashboard/           # React 19 + Tailwind v4 Banker Dashboard (Port 5173)
+│   └── msme-pwa/                   # React 19 + Tailwind v4 MSME Self-Service PWA (Port 5174)
 ├── services/
-│   ├── api-gateway/                # Spring Boot API Gateway (Port 8080)
+│   ├── api-gateway/                # Spring Cloud API Gateway + JWT Auth (Port 8080)
 │   ├── consent-aa/                 # Spring Boot Consent & AA Service (Port 8082)
 │   ├── ingestion/                  # Spring Boot Data Ingestion Service (Port 8083)
 │   ├── msme-registry/              # Spring Boot MSME Registry Service (Port 8081)
-│   ├── scoring-engine/             # Python FastAPI ML Scoring Engine & SGSDG (Port 8000)
+│   ├── scoring-engine/             # Python FastAPI ML Scoring Engine & TreeSHAP (Port 8000)
 │   └── health-card/                # Spring Boot Health Card & OCEN Service (Port 8084)
 ├── k8s/                            # Production Kubernetes deployment & HPA manifests
 ├── monitoring/                     # Prometheus & Grafana audit dashboards
@@ -107,7 +107,7 @@ Our platform replaces static document checks with a **near real-time, multidimen
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## 🚀 Quick Start (Local & E2E Development)
 
 ### Prerequisites
 *   **Docker & Docker Desktop** (with at least 6GB RAM allocated)
@@ -115,26 +115,92 @@ Our platform replaces static document checks with a **near real-time, multidimen
 *   **Python 3.11+**
 *   **Node.js 20+** & **npm**
 
-### 1. Launch E2E Cluster via Docker Compose
-The fastest way to run the entire system (Database, Redis, Kafka brokers, all 6 microservices, and monitoring):
-```bash
-docker-compose up --build -d
-```
-*   **Banker Dashboard**: Run `npm run dev` in `apps/banker-dashboard` (http://localhost:5173)
-*   **MSME Portal (PWA)**: Run `npm run dev` in `apps/msme-pwa` (http://localhost:5174)
-*   **API Gateway (Swagger/Route)**: http://localhost:8080
-*   **Scoring Engine API**: http://localhost:8000/docs
-*   **Grafana Observability**: http://localhost:3000 (admin/msme_grafana_admin)
+---
 
-### 2. Generate Synthetic MSME Cohort & Validate Schemas
-To generate 10,000 stratified MSME profiles (Healthy, Stressed, Seasonal, NTC, High-Growth) and validate them against official JSON schemas:
+### 1. Launch Backend E2E Cluster via Docker Compose
+The fastest way to run the entire backend infrastructure (PostgreSQL, Redis, Kafka brokers, Python Scoring Engine, all 5 Spring Boot microservices, and Prometheus/Grafana observability):
+
+```bash
+docker compose up -d --build
+```
+> [!TIP]
+> **Docker BuildKit Caching**: All Spring Boot Dockerfiles are optimized with `--mount=type=cache,target=/root/.m2/repository` and Maven Wagon HTTP retry transport. Your dependency downloads are cached across builds, preventing Cloudflare CDN rate-limiting and speeding up builds by 10x!
+
+#### Backend Access Ports & Observability
+| Service / Component | Port / URL | Description |
+| :--- | :--- | :--- |
+| **API Gateway (Spring Cloud)** | `http://localhost:8080` | Single entrypoint routing to all microservices & AI engine |
+| **Python Scoring Engine (FastAPI)** | `http://localhost:8000/docs` | Interactive Swagger API documentation for AI/ML scoring |
+| **MSME Registry Service** | `http://localhost:8081` | Udyam registration, GST filing history, business profiles |
+| **Consent & AA Service** | `http://localhost:8082` | Account Aggregator & DEPA framework consent flows |
+| **Data Ingestion Service** | `http://localhost:8083` | Bank statements (AA), ITR, GST, and EPFO data ingestion |
+| **Health Card & OCEN Service** | `http://localhost:8084` | Generates MSME Health Card & OCEN 4.0 credit offers |
+| **Prometheus Monitoring** | `http://localhost:9090` | Real-time metric scraping across all backend services |
+| **Grafana Dashboards** | `http://localhost:3000` | Enterprise observability (Login: `admin` / `msme_grafana_admin`) |
+
+---
+
+### 2. Launch Frontend Applications (React 19 + Vite)
+We provide convenient root-level shortcut scripts in the monorepo to run both frontend applications effortlessly:
+
+```bash
+# Step 1: Install all frontend dependencies cleanly (no lockfile collisions):
+npm run install:all
+
+# Step 2: Start the Banker Dashboard dev server (Port 5173):
+npm run dev:banker
+
+# Step 3 (In a new terminal): Start the MSME PWA dev server (Port 5174):
+npm run dev:pwa
+```
+*   👔 **Banker Dashboard**: Open `http://localhost:5173` — Evaluate MSME portfolios, run What-If credit simulations, and inspect TreeSHAP explainability.
+*   📱 **MSME Business PWA**: Open `http://localhost:5174` — Mobile-responsive shell for MSME owners to view health cards, reason codes, and manage DEPA consents.
+
+---
+
+### 3. Connecting Frontend to Live Backend API Mode
+By default, both frontend applications launch in an **Instant Interactive Mode** using rich mock cohort data so you can explore charts and simulators immediately without needing a server.
+
+When your Docker backend is running:
+1. Look at the top-right header of the **Banker Dashboard** (`http://localhost:5173`).
+2. Click the **"Live API"** toggle switch (it will turn bright green 🟢).
+3. The dashboard will now make real HTTP `POST` requests to your live Spring Cloud API Gateway (`http://localhost:8080`) and Python AI Scoring Engine (`http://localhost:8000`).
+4. Adjusting sliders in the **What-If Simulator** will trigger real-time ML inference and recalculate TreeSHAP contributions live!
+
+---
+
+### 4. Verify E2E Scoring & Redis Caching
+Test real-time AI scoring and Redis caching directly from your terminal:
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/score/" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "msmeId": "MSME-2026-001",
+       "udyamNumber": "UDYAM-MH-01-0001234",
+       "businessName": "Apex Textiles Pvt Ltd",
+       "vintageYears": 6,
+       "monthlyTurnover": 4500000,
+       "gstr3bRegularity": 98.5,
+       "bouncedCheques3m": 0,
+       "aaBankBalanceAvg": 1250000,
+       "epfoActiveEmployees": 24,
+       "forceRecalculate": true
+     }'
+```
+You will receive a calculated **Health Score (300-900)**, **Risk Band**, **TreeSHAP feature explanations**, and **OCEN 4.0 Loan Eligibility**. Subsequent calls for the same `msmeId` are cached in Redis for sub-second responses!
+
+---
+
+### 5. Generate Synthetic MSME Cohorts & Validate Schemas
+To generate stratified MSME profiles (Healthy, Stressed, Seasonal, NTC, High-Growth) and validate them against official JSON schemas:
 ```bash
 python -m venv venv && venv\Scripts\activate
 pip install -r data-generators/sgsdg/requirements.txt
 PYTHONPATH=data-generators/sgsdg python data-generators/sgsdg/generate_and_validate.py --count 10000 --seed 42 --output data/synthetic_cohort.jsonl
 ```
 
-### 3. Train ML Models & Run Bake-Off
+### 6. Train ML Models & Run Bake-Off
 To run the XGBoost vs. LightGBM bake-off on the generated cohort and produce the production model artifact:
 ```bash
 pip install -r services/scoring-engine/requirements.txt
@@ -151,3 +217,4 @@ Every feature in this repository strictly adheres to the Master Build Prompt:
 *   ✅ **Sandbox Adapter Swapping**: All services implement `DataSourceAdapter`; switching to production requires changing a single property in `application.yml`.
 *   ✅ **SHAP Reconciliation**: Unit tests (`test_shap_reconciliation.py`) assert that the sum of displayed reason-code SHAP contributions reconciles within 5% of the model's raw base value + prediction.
 *   ✅ **DPDP Act Compliance**: Consent revocation immediately cancels Kafka ingestion workers and purges raw PII payloads.
+
