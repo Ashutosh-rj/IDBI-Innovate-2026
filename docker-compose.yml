@@ -1,0 +1,238 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL 16 Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: msme-postgres
+    environment:
+      POSTGRES_DB: msme_health
+      POSTGRES_USER: msme_admin
+      POSTGRES_PASSWORD: msme_secure_password_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U msme_admin -d msme_health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - msme-net
+
+  # 2. Redis 7 Cache & Rate Limiter
+  redis:
+    image: redis:7-alpine
+    container_name: msme-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass msme_redis_secret
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "msme_redis_secret", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - msme-net
+
+  # 3. Apache Kafka (KRaft Mode - Zero Zookeeper)
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: msme-kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    volumes:
+      - kafkadata:/tmp/kraft-combined-logs
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - msme-net
+
+  # 4. Python Scoring Engine (FastAPI + XGBoost + TreeSHAP)
+  scoring-engine:
+    build:
+      context: ./services/scoring-engine
+      dockerfile: Dockerfile
+    container_name: msme-scoring-engine
+    ports:
+      - "8000:8000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - MODEL_PATH=/app/models/saved/xgboost_health_scorer.model
+      - ENVIRONMENT=production
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - msme-net
+
+  # 5. MSME Registry Service (Spring Boot)
+  msme-registry:
+    build:
+      context: ./services/msme-registry
+      dockerfile: Dockerfile
+    container_name: msme-registry
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/msme_health
+      - SPRING_DATASOURCE_USERNAME=msme_admin
+      - SPRING_DATASOURCE_PASSWORD=msme_secure_password_2026
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - msme-net
+
+  # 6. Consent & AA Service (Spring Boot - ReBIT AA v2.0)
+  consent-aa:
+    build:
+      context: ./services/consent-aa
+      dockerfile: Dockerfile
+    container_name: msme-consent-aa
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/msme_health
+      - SPRING_DATASOURCE_USERNAME=msme_admin
+      - SPRING_DATASOURCE_PASSWORD=msme_secure_password_2026
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - msme-net
+
+  # 7. Ingestion Service (Spring Boot - Connectors + Kafka Producer)
+  ingestion:
+    build:
+      context: ./services/ingestion
+      dockerfile: Dockerfile
+    container_name: msme-ingestion
+    ports:
+      - "8083:8083"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - APP_DATA_MODE=sandbox
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - msme-net
+
+  # 8. Health Card Service (Spring Boot - Score Consumer & OCEN Adapter)
+  health-card:
+    build:
+      context: ./services/health-card
+      dockerfile: Dockerfile
+    container_name: msme-health-card
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/msme_health
+      - SPRING_DATASOURCE_USERNAME=msme_admin
+      - SPRING_DATASOURCE_PASSWORD=msme_secure_password_2026
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - OCEN_SANDBOX_URL=https://sandbox.ocen.dev/v4/credit-passport
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - msme-net
+
+  # 9. API Gateway (Spring Cloud Gateway + JWT Auth + Rate Limiting)
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: msme-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=msme_redis_secret
+      - ROUTING_MSME_REGISTRY_URL=http://msme-registry:8081
+      - ROUTING_CONSENT_AA_URL=http://consent-aa:8082
+      - ROUTING_INGESTION_URL=http://ingestion:8083
+      - ROUTING_HEALTH_CARD_URL=http://health-card:8084
+      - ROUTING_SCORING_ENGINE_URL=http://scoring-engine:8000
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - msme-net
+
+  # 10. Prometheus Monitoring Engine
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: msme-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - promdata:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - msme-net
+
+  # 11. Grafana Audit Dashboard
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: msme-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=msme_grafana_admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - msme-net
+
+networks:
+  msme-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
+  kafkadata:
+  promdata:
+  grafanadata:

@@ -1,0 +1,25 @@
+# Python Scoring Engine & ML .gitignore
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+dist/
+build/
+*.egg-info/
+*.model
+*.pkl
+*.joblib
+*.h5
+models/saved/*.model
+models/saved/*.pkl
+!models/saved/.gitkeep
+data/*.jsonl
+data/*.csv
+data/*.parquet
+/tmp/

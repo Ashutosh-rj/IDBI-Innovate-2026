@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://msme-health-score.idbi.co.in/contracts/v1/aa-fi-statement.schema.json",
+  "title": "Account Aggregator FI Statement (ReBIT v2.0)",
+  "description": "Decrypted Financial Information statement from Account Aggregator ecosystem. Structure mirrors the ReBIT FI Data schema v2.0.0 for DEPOSIT type accounts.",
+  "type": "object",
+  "required": ["statementId", "msmeId", "consentId", "account", "fetchTimestamp", "source"],
+  "properties": {
+    "statementId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Internal unique identifier for this FI statement fetch"
+    },
+    "msmeId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "consentId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Reference to the consent artifact authorizing this fetch"
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "AA session ID for this FI fetch"
+    },
+    "fipId": {
+      "type": "string",
+      "description": "Financial Information Provider ID"
+    },
+    "account": {
+      "type": "object",
+      "required": ["linkedAccRef", "maskedAccNumber", "type", "version", "summary", "transactions"],
+      "properties": {
+        "linkedAccRef": {
+          "type": "string",
+          "description": "Unique account reference within AA ecosystem, assigned during account linking by FIP"
+        },
+        "maskedAccNumber": {
+          "type": "string",
+          "description": "Masked account number for display (e.g. XXXX-XXXX-1234)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["deposit", "term_deposit", "recurring_deposit", "equity", "nps", "insurance", "mutual_funds"],
+          "description": "Account type per ReBIT FI schema"
+        },
+        "version": {
+          "type": "string",
+          "const": "2.0.0"
+        },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "holders": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "enum": ["SINGLE", "JOINT"] },
+                "holder": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": { "type": "string" },
+                      "dob": { "type": "string", "format": "date" },
+                      "mobile": { "type": "string" },
+                      "pan": { "type": "string" },
+                      "email": { "type": "string", "format": "email" },
+                      "nominee": { "type": "string", "enum": ["REGISTERED", "NOT-REGISTERED"] }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": {
+          "type": "object",
+          "required": ["currentBalance", "currency", "status"],
+          "properties": {
+            "currentBalance": {
+              "type": "string",
+              "pattern": "^-?\\d+\\.\\d{2}$",
+              "description": "Current account balance as decimal string"
+            },
+            "currency": { "type": "string", "const": "INR" },
+            "branch": { "type": "string" },
+            "facility": {
+              "type": "string",
+              "enum": ["OD", "CC"],
+              "description": "OD=Overdraft, CC=Cash Credit"
+            },
+            "ifscCode": {
+              "type": "string",
+              "pattern": "^[A-Z]{4}0[A-Z0-9]{6}$"
+            },
+            "micrCode": { "type": "string" },
+            "openingDate": { "type": "string", "format": "date" },
+            "currentODLimit": { "type": "string" },
+            "drawingLimit": { "type": "string" },
+            "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] }
+          }
+        },
+        "transactions": {
+          "type": "object",
+          "required": ["startDate", "endDate", "transaction"],
+          "properties": {
+            "startDate": { "type": "string", "format": "date" },
+            "endDate": { "type": "string", "format": "date" },
+            "transaction": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["type", "mode", "amount", "transactionTimestamp"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["CREDIT", "DEBIT"]
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": ["UPI", "NEFT", "RTGS", "IMPS", "CASH", "CARD", "OTHERS"],
+                    "description": "Transaction mode per ReBIT schema"
+                  },
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d{2}$"
+                  },
+                  "currentBalance": {
+                    "type": "string",
+                    "pattern": "^-?\\d+\\.\\d{2}$"
+                  },
+                  "transactionTimestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "narration": {
+                    "type": "string",
+                    "description": "Transaction narration/description"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Transaction reference number"
+                  },
+                  "valueDate": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": ["PRODUCTION", "SANDBOX"],
+      "description": "Data source tag for audit trail"
+    },
+    "fetchTimestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

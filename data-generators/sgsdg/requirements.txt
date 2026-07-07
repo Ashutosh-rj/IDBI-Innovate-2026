@@ -1,0 +1,10 @@
+numpy>=1.26.0
+pandas>=2.1.0
+scipy>=1.11.0
+pyyaml>=6.0.1
+jsonschema>=4.19.0
+faker>=19.0.0
+click>=8.1.7
+pydantic>=2.4.0
+pydantic-settings>=2.0.3
+structlog>=23.1.0

@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://msme-health-score.idbi.co.in/contracts/v1/epfo-contribution.schema.json",
+  "title": "EPFO Contribution Record",
+  "description": "EPFO employer contribution records for an MSME establishment. Stats anchored to: 766K establishments, 73.7M members, ~75-80% on-time contribution rate (EPFO FY 2023-24). EPF mandatory for 20+ employees.",
+  "type": "object",
+  "required": ["recordId", "msmeId", "establishmentCode", "monthlySummaries", "source"],
+  "properties": {
+    "recordId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "msmeId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "establishmentCode": {
+      "type": "string",
+      "description": "EPFO establishment code"
+    },
+    "establishmentName": {
+      "type": "string"
+    },
+    "registrationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of EPFO registration"
+    },
+    "coveredUnderAct": {
+      "type": "boolean",
+      "description": "Whether establishment is covered under EPF & MP Act (mandatory for 20+ employees)"
+    },
+    "monthlySummaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["month", "activeMembers", "employerContribution", "employeeContribution", "wageMonth", "contributionStatus"],
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "description": "YYYY-MM format for the contribution month"
+          },
+          "activeMembers": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of active contributing members for this month"
+          },
+          "newJoiners": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "New members added this month"
+          },
+          "exits": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Members who exited this month"
+          },
+          "totalBasicWages": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total basic wages + DA for all members in INR"
+          },
+          "employerContribution": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Employer PF contribution (12% of basic wages + DA) in INR"
+          },
+          "employeeContribution": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Employee PF contribution (12% of basic wages + DA) in INR"
+          },
+          "adminCharges": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Administrative charges payable"
+          },
+          "wageMonth": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "description": "The wage month this contribution relates to"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "description": "15th of the month following the wage month"
+          },
+          "paymentDate": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "Actual date of contribution payment"
+          },
+          "contributionStatus": {
+            "type": "string",
+            "enum": ["ON_TIME", "LATE", "DEFAULTED", "PARTIAL"],
+            "description": "Compliance status of this month's contribution"
+          },
+          "delayDays": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Days past due date (0 if on-time)"
+          },
+          "penaltyAmount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Penalty charged: 1% of arrears per month (post Jun 2024), plus 12% p.a. interest under Section 7Q"
+          },
+          "trrn": {
+            "type": ["string", "null"],
+            "description": "Transaction Reference Return Number (TRRN) for payment tracking"
+          }
+        }
+      }
+    },
+    "aggregateStats": {
+      "type": "object",
+      "properties": {
+        "avgActiveMembers": {
+          "type": "number",
+          "description": "Average monthly active member count"
+        },
+        "memberGrowthRate": {
+          "type": "number",
+          "description": "Month-over-month member growth rate"
+        },
+        "contributionRegularity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Ratio of on-time contributions to total expected contributions"
+        },
+        "totalDefaultedMonths": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "totalPenaltiesPaid": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": ["PRODUCTION", "SANDBOX"]
+    },
+    "fetchTimestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

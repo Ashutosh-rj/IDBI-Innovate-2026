@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://msme-health-score.idbi.co.in/contracts/v1/consent-artifact.schema.json",
+  "title": "Consent Artifact (ReBIT AA v2.0)",
+  "description": "Consent artifact structure per ReBIT Account Aggregator API v2.0. Represents the consent granted by an MSME customer for data sharing via the AA ecosystem.",
+  "type": "object",
+  "required": ["ver", "txnid", "consentId", "status", "consentDetail", "createdAt"],
+  "properties": {
+    "ver": {
+      "type": "string",
+      "const": "2.0.0",
+      "description": "API version"
+    },
+    "txnid": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Transaction ID for this consent operation"
+    },
+    "consentId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this consent artifact"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ACTIVE", "PAUSED", "REVOKED", "EXPIRED"],
+      "description": "Current lifecycle status of the consent"
+    },
+    "consentDetail": {
+      "type": "object",
+      "required": ["consentStart", "consentExpiry", "consentMode", "fetchType", "consentTypes", "fiTypes", "dataConsumer", "customer", "purpose", "fiDataRange", "dataLife", "frequency"],
+      "properties": {
+        "consentStart": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Consent validity start (ISO 8601)"
+        },
+        "consentExpiry": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Consent validity end (ISO 8601)"
+        },
+        "consentMode": {
+          "type": "string",
+          "enum": ["STORE", "VIEW"],
+          "description": "Whether FIU may store or only view the data"
+        },
+        "fetchType": {
+          "type": "string",
+          "enum": ["ONETIME", "PERIODIC"],
+          "description": "One-time fetch vs. periodic recurring fetch"
+        },
+        "consentTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["PROFILE", "TRANSACTIONS", "SUMMARY"]
+          },
+          "minItems": 1
+        },
+        "fiTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["DEPOSIT", "TERM_DEPOSIT", "RECURRING_DEPOSIT", "EQUITY", "NPS", "INSURANCE", "MUTUAL_FUNDS", "GST_GSTR1", "GST_GSTR3B", "GST_GSTR2A"]
+          },
+          "minItems": 1,
+          "description": "Types of financial information consented for"
+        },
+        "dataConsumer": {
+          "type": "object",
+          "required": ["id", "type"],
+          "properties": {
+            "id": { "type": "string", "description": "FIU entity ID (e.g. IDBI Bank FIU ID)" },
+            "type": { "type": "string", "const": "FIU" }
+          }
+        },
+        "customer": {
+          "type": "object",
+          "required": ["identifiers"],
+          "properties": {
+            "identifiers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["type", "value"],
+                "properties": {
+                  "type": { "type": "string", "enum": ["MOBILE", "PAN", "DOB"] },
+                  "value": { "type": "string" }
+                }
+              },
+              "minItems": 1
+            }
+          }
+        },
+        "purpose": {
+          "type": "object",
+          "required": ["code", "refUri"],
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": ["101", "102", "103", "104", "105"],
+              "description": "Purpose code: 101=Wealth mgmt, 102=Spending patterns, 103=Aggregated statement/underwriting, 104=Loan monitoring, 105=Account verification"
+            },
+            "refUri": {
+              "type": "string",
+              "format": "uri",
+              "description": "Reference URI for purpose definition"
+            },
+            "text": {
+              "type": "string",
+              "description": "Human-readable purpose description"
+            }
+          }
+        },
+        "fiDataRange": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string", "format": "date-time" },
+            "to": { "type": "string", "format": "date-time" }
+          }
+        },
+        "dataLife": {
+          "type": "object",
+          "required": ["unit", "value"],
+          "properties": {
+            "unit": { "type": "string", "enum": ["DAY", "MONTH", "YEAR", "INF"] },
+            "value": { "type": "integer", "minimum": 0 }
+          },
+          "description": "How long the FIU may retain fetched data"
+        },
+        "frequency": {
+          "type": "object",
+          "required": ["unit", "value"],
+          "properties": {
+            "unit": { "type": "string", "enum": ["HOUR", "DAY", "MONTH", "YEAR"] },
+            "value": { "type": "integer", "minimum": 1 }
+          },
+          "description": "How often data may be fetched (for PERIODIC fetchType)"
+        },
+        "dataFilter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string" },
+              "operator": { "type": "string", "enum": [">=", "<=", ">", "<", "="] },
+              "value": { "type": "string" }
+            }
+          },
+          "description": "Optional filters on data fetched"
+        }
+      }
+    },
+    "consentHandle": {
+      "type": "string",
+      "description": "Handle returned by AA for tracking consent flow"
+    },
+    "digitalSignature": {
+      "type": "string",
+      "description": "JWS digital signature of the consent artifact"
+    },
+    "consentLedgerHash": {
+      "type": "string",
+      "description": "Hash-chain value linking this consent to the previous entry in the immutable consent ledger"
+    },
+    "revokedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of revocation (if status=REVOKED)"
+    },
+    "revokedBy": {
+      "type": "string",
+      "enum": ["CUSTOMER", "FIU", "AA"],
+      "description": "Who initiated the revocation"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

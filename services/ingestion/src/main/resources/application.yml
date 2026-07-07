@@ -1,0 +1,34 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: ingestion-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+
+msme:
+  adapter:
+    mode: ${ADAPTER_MODE:SANDBOX}
+    gst-api-url: https://api.gst.gov.in/v2/returns
+    upi-api-url: https://api.npci.org.in/v1/merchant/summary
+    aa-api-url: https://api.onemoney.in/v2/fi/fetch
+    epfo-api-url: https://api.epfindia.gov.in/v1/employer/contributions
+  kafka:
+    topics:
+      raw-alt-data: raw-alt-data-events
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

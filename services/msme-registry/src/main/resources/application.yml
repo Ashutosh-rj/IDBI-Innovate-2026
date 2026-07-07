@@ -1,0 +1,36 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: msme-registry-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:msme_health_db}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+# DataSourceAdapter Toggle (Rule 2 & Option B)
+# In SANDBOX mode, queries SGSDG synthetic data or mock Udyam registry
+# In PRODUCTION mode, connects to live Udyam / PAN API endpoints
+msme:
+  adapter:
+    mode: ${ADAPTER_MODE:SANDBOX}
+    udyam-api-url: https://api.udyamregistration.gov.in/v1/verify
+    pan-api-url: https://api.incometax.gov.in/v1/pan/verify
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always

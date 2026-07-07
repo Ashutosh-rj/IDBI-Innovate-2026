@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 50
+            redis-rate-limiter.burstCapacity: 100
+            redis-rate-limiter.requestedTokens: 1
+      routes:
+        # Route to MSME Registry Service (Udyam & KYC)
+        - id: msme-registry-route
+          uri: http://${REGISTRY_HOST:localhost}:8083
+          predicates:
+            - Path=/api/v1/registry/**
+        # Route to Consent & AA Service (ReBIT AA v2.0 Flow)
+        - id: consent-aa-route
+          uri: http://${CONSENT_HOST:localhost}:8081
+          predicates:
+            - Path=/api/v1/consent/**
+        # Route to Ingestion Service (Alt Data Streams)
+        - id: ingestion-route
+          uri: http://${INGESTION_HOST:localhost}:8082
+          predicates:
+            - Path=/api/v1/ingestion/**
+        # Route to Health Card Service (Immutable Scorecards & OCEN)
+        - id: health-card-route
+          uri: http://${HEALTH_CARD_HOST:localhost}:8084
+          predicates:
+            - Path=/api/v1/health-card/**
+        # Route to Python FastAPI Scoring Engine (/score & /simulate)
+        - id: scoring-engine-route
+          uri: http://${SCORING_HOST:localhost}:8000
+          predicates:
+            - Path=/api/v1/score/**, /api/v1/simulate/**
+          filters:
+            - StripPrefix=2
+
+jwt:
+  secret: ${JWT_SECRET:9a4f2c8d3b7a1e6f45c8a0b3f267d8b1d4e6f3c8a9d0b1e5f8a3c9d2e7f1b4a0}
+  expiration-ms: 86400000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway,prometheus
+  endpoint:
+    health:
+      show-details: always

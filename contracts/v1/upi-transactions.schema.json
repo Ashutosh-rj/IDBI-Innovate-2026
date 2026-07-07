@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://msme-health-score.idbi.co.in/contracts/v1/upi-transactions.schema.json",
+  "title": "UPI Transaction Summary",
+  "description": "Aggregated UPI transaction data for an MSME. Distribution parameters anchored to NPCI published aggregate statistics (FY 2025-26): 241.62B transactions, P2M avg ₹627, 86% below ₹500.",
+  "type": "object",
+  "required": ["summaryId", "msmeId", "merchantVpa", "periodStart", "periodEnd", "monthlySummaries", "source"],
+  "properties": {
+    "summaryId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "msmeId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "merchantVpa": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9.\\-_]+@[a-zA-Z]+$",
+      "description": "Merchant UPI Virtual Payment Address"
+    },
+    "merchantCategoryCode": {
+      "type": "string",
+      "pattern": "^[0-9]{4}$",
+      "description": "4-digit MCC code for the merchant"
+    },
+    "periodStart": { "type": "string", "format": "date" },
+    "periodEnd": { "type": "string", "format": "date" },
+    "monthlySummaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["month", "totalCredits", "totalDebits", "creditCount", "debitCount"],
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "description": "YYYY-MM format"
+          },
+          "totalCredits": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total incoming UPI payments in INR"
+          },
+          "totalDebits": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Total outgoing UPI payments in INR"
+          },
+          "creditCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of incoming transactions"
+          },
+          "debitCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "avgCreditAmount": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Average incoming transaction size"
+          },
+          "avgDebitAmount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "uniquePayerCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of unique payers (customer concentration metric)"
+          },
+          "uniquePayeeCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "peakDayVolume": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Highest single-day transaction count in the month"
+          },
+          "lowDayVolume": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Lowest single-day transaction count"
+          },
+          "p2mRatio": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Proportion of P2M vs total transactions"
+          },
+          "below500Count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Transactions below ₹500 (NPCI: 86% of P2M transactions)"
+          }
+        }
+      }
+    },
+    "transactionDetails": {
+      "type": "array",
+      "description": "Individual transaction records (optional, for detailed analysis)",
+      "items": {
+        "type": "object",
+        "required": ["txnId", "type", "amount", "timestamp"],
+        "properties": {
+          "txnId": { "type": "string" },
+          "type": { "type": "string", "enum": ["CREDIT", "DEBIT"] },
+          "amount": { "type": "number", "minimum": 0 },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "counterpartyVpa": { "type": "string" },
+          "narration": { "type": "string" },
+          "status": { "type": "string", "enum": ["SUCCESS", "FAILED", "PENDING"] }
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": ["PRODUCTION", "SANDBOX"]
+    },
+    "fetchTimestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

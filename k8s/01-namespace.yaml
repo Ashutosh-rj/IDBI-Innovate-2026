@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: msme-health-platform
+  labels:
+    name: msme-health-platform
+    environment: production
+    track: idbi-innovate-track03

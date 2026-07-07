@@ -1,0 +1,121 @@
+name: IDBI Innovate 2026 — MSME Health Platform CI/CD
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # 1. Validate Synthetic Data Engine (SGSDG) & KS Drift
+  validate-synthetic-data:
+    name: Validate SGSDG & KS Distribution Drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r services/scoring-engine/requirements.txt
+
+      - name: Run SGSDG Generator Validation
+        run: |
+          python services/scoring-engine/data/generate_and_validate.py --cohort-size 200 --seed 42 --output-dir /tmp/sgsdg_ci_test
+
+  # 2. Test Scoring Engine & TreeSHAP Monotonicity
+  test-scoring-engine:
+    name: Test XGBoost/LightGBM & SHAP Monotonicity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r services/scoring-engine/requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Train Bake-off Model & Verify Monotonic Constraints
+        run: |
+          PYTHONPATH=services/scoring-engine python services/scoring-engine/ml/train.py --cohort-size 500 --output-dir /tmp/models_ci
+
+      - name: Run Scoring Engine Unit & API Tests
+        run: |
+          PYTHONPATH=services/scoring-engine pytest services/scoring-engine/tests/ -v
+
+  # 3. Build Spring Boot Microservices
+  build-spring-services:
+    name: Build 5 Spring Boot Microservices (Maven)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build Parent POM & Microservices
+        run: |
+          cd services
+          mvn clean package -DskipTests --no-transfer-progress
+
+  # 4. Build Frontend React PWAs (Vite + TypeScript + Tailwind v4)
+  build-frontend-apps:
+    name: Build Banker Dashboard & MSME PWA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Banker Dashboard
+        run: |
+          cd apps/banker-dashboard
+          npm ci
+          npm run build
+
+      - name: Build MSME PWA
+        run: |
+          cd apps/msme-pwa
+          npm ci
+          npm run build
+
+  # 5. Validate Kubernetes Manifests
+  validate-k8s-manifests:
+    name: Validate K8s Manifests Syntax & Schemas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Validate all YAML manifests in /k8s
+        run: |
+          kubeconform -summary -verbose k8s/

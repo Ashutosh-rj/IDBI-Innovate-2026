@@ -1,0 +1,121 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 1,
+  "links": [],
+  "liveNow": false,
+  "panes": [],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["idbi-innovate", "msme-health-score", "fintech", "audit"],
+  "title": "IDBI Innovate 2026 — MSME Financial Health Platform Audit & Drift Monitoring",
+  "uid": "msme-health-001",
+  "version": 1,
+  "panels": [
+    {
+      "title": "API Gateway Request Latency (P95 / P99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job='api-gateway'}[5m])) by (le))",
+          "legendFormat": "P95 Latency (s)",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job='api-gateway'}[5m])) by (le))",
+          "legendFormat": "P99 Latency (s)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "XGBoost Model Inference Latency & Throughput",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(scoring_requests_total{job='scoring-engine'}[1m])",
+          "legendFormat": "Scoring Requests/sec",
+          "refId": "A"
+        },
+        {
+          "expr": "scoring_inference_latency_seconds{job='scoring-engine'}",
+          "legendFormat": "Inference Time (s)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "Kafka Event Backbone — Consumer Lag (Score Computed vs Ingestion)",
+      "type": "gauge",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(kafka_consumergroup_lag{topic=~'msme-ingestion-events|score-computed'}) by (topic)",
+          "legendFormat": "{{topic}} Lag",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Population Stability Index (PSI) — Feature Drift Monitoring",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "expr": "model_feature_drift_psi{job='scoring-engine'}",
+          "legendFormat": "PSI Score (Threshold < 0.10 Stable)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            { "color": "green", "value": null },
+            { "color": "yellow", "value": 0.10 },
+            { "color": "red", "value": 0.25 }
+          ]
+        }
+      }
+    },
+    {
+      "title": "ReBIT AA v2.0 Consent Ledger Status",
+      "type": "piechart",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(consent_status_count{job='consent-aa'}) by (status)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "OCEN 4.0 & ULI Credit Passport Export Success Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "targets": [
+        {
+          "expr": "rate(ocen_passport_published_total{job='health-card'}[5m])",
+          "legendFormat": "Passports Published/sec",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(ocen_passport_failed_total{job='health-card'}[5m])",
+          "legendFormat": "Failed Exports/sec",
+          "refId": "B"
+        }
+      ]
+    }
+  ]
+}

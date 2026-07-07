@@ -1,0 +1,124 @@
+# Statistically-Grounded Synthetic Data Generator (SGSDG) Configuration
+# Parameters derived from published RBI, GSTN, NPCI, and EPFO reports (see DATA_ASSUMPTIONS.md)
+
+meta:
+  version: "1.0.0"
+  last_updated: "2026-07-07"
+  sources_documented_in: "../../DATA_ASSUMPTIONS.md"
+
+cohort_stratification:
+  total_profiles: 10000
+  scenarios:
+    HEALTHY_ESTABLISHED: 0.35
+    STRESSED_LIQUIDITY: 0.20
+    SEASONAL_BUSINESS: 0.15
+    NTC_THIN_FILE: 0.20
+    HIGH_GROWTH: 0.10
+
+gst:
+  compliance:
+    national_on_time_rate: 0.943 # GSTN FY24-25
+    msme_beta_params:
+      alpha: 17.0
+      beta: 3.0
+    late_fee_per_day: 50.0 # INR/day normal return
+    nil_late_fee_per_day: 20.0 # INR/day nil return
+    statutory_caps:
+      micro_1_5cr: 2000.0
+      small_5cr: 5000.0
+      medium_above_5cr: 10000.0
+    interest_rate_pa: 0.18 # 18% per annum
+  turnover_lognorm:
+    MICRO:
+      mu: 15.8
+      sigma: 1.2 # Mean ~1.8 Cr/yr
+    SMALL:
+      mu: 17.5
+      sigma: 0.8 # Mean ~45 Cr/yr
+    MEDIUM:
+      mu: 19.1
+      sigma: 0.5 # Mean ~220 Cr/yr
+  itc_ratio_normal:
+    mu: 0.68
+    sigma: 0.12
+    min_clip: 0.10
+    max_clip: 0.98
+
+upi:
+  macro:
+    annual_volume_bn: 241.62 # FY25-26
+    p2m_avg_ticket_inr: 627.0 # NPCI H2 2024
+    below_500_share: 0.86 # 86% of P2M txns
+  daily_volume_neg_binomial:
+    MICRO:
+      mu: 45.0
+      var: 180.0
+    SMALL:
+      mu: 320.0
+      var: 1500.0
+    MEDIUM:
+      mu: 1200.0
+      var: 8000.0
+  ticket_size_mixture:
+    comp1_small_retail:
+      weight: 0.86
+      lognorm_mu: 5.736 # Mean ~310 INR
+      lognorm_sigma: 0.8
+    comp2_b2b_large:
+      weight: 0.14
+      lognorm_mu: 9.047 # Mean ~8500 INR
+      lognorm_sigma: 0.9
+
+epfo:
+  macro:
+    total_establishments: 766000 # FY23-24
+    total_members: 73700000 # FY23-24
+    mean_establishment_size: 96
+    employer_rate: 0.12 # 12% of basic wages
+    mandatory_threshold: 20 # 20+ employees
+  establishment_size_pareto:
+    xm: 20.0 # Minimum employees for mandatory coverage
+    alpha: 1.35
+  compliance_probabilities:
+    HEALTHY_ESTABLISHED: 0.94
+    STRESSED_LIQUIDITY: 0.58
+    SEASONAL_BUSINESS: 0.85
+    NTC_THIN_FILE: 0.90
+    HIGH_GROWTH: 0.92
+  wage_lognorm:
+    mu: 9.8
+    sigma: 0.4 # Mean monthly wage ~19,500 INR
+
+scenarios:
+  HEALTHY_ESTABLISHED:
+    turnover_yoy_growth: 0.15
+    gst_late_prob_modifier: 0.5
+    upi_volume_modifier: 1.0
+    itc_mismatch_prob: 0.05
+    default_probability: 0.02
+  STRESSED_LIQUIDITY:
+    turnover_yoy_growth: -0.25
+    gst_late_prob_modifier: 2.5
+    upi_volume_modifier: 0.6
+    itc_mismatch_prob: 0.35
+    default_probability: 0.65
+  SEASONAL_BUSINESS:
+    turnover_yoy_growth: 0.08
+    seasonal_amplitude_ratio: 0.45 # Peak is 45% above baseline
+    gst_late_prob_modifier: 1.0
+    upi_volume_modifier: 1.2
+    itc_mismatch_prob: 0.10
+    default_probability: 0.12
+  NTC_THIN_FILE:
+    turnover_yoy_growth: 0.20
+    gst_late_prob_modifier: 1.2
+    upi_volume_modifier: 0.9
+    itc_mismatch_prob: 0.15
+    default_probability: 0.18 # Higher uncertainty, but viable
+    history_months: 8 # Only 8 months of history
+  HIGH_GROWTH:
+    turnover_yoy_growth: 0.65
+    gst_late_prob_modifier: 0.8
+    upi_volume_modifier: 1.8
+    itc_mismatch_prob: 0.12
+    default_probability: 0.08

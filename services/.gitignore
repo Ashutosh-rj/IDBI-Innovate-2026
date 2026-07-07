@@ -1,0 +1,13 @@
+# Maven / Spring Boot Microservices .gitignore
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
+.mvn/wrapper/maven-wrapper.jar
+bin/
+out/
+.spring-beans

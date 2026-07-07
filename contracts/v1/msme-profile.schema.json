@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://msme-health-score.idbi.co.in/contracts/v1/msme-profile.schema.json",
+  "title": "MSME Profile",
+  "description": "Core MSME entity record. Fields align with Udyam Registration portal and MSME Ministry classification (revised April 2025).",
+  "type": "object",
+  "required": ["msmeId", "udyamNumber", "businessName", "category", "sector", "gstin", "pan", "registrationDate"],
+  "properties": {
+    "msmeId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Internal unique identifier for this MSME entity"
+    },
+    "udyamNumber": {
+      "type": "string",
+      "pattern": "^UDYAM-[A-Z]{2}-\\d{2}-\\d{7}$",
+      "description": "Udyam Registration Number (format: UDYAM-XX-00-0000000)"
+    },
+    "businessName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "legalName": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Legal name as per PAN records"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["MICRO", "SMALL", "MEDIUM"],
+      "description": "MSME classification per revised limits (Apr 2025): Micro ≤₹2.5Cr investment/≤₹10Cr turnover, Small ≤₹25Cr/≤₹100Cr, Medium ≤₹125Cr/≤₹500Cr"
+    },
+    "sector": {
+      "type": "string",
+      "enum": ["MANUFACTURING", "SERVICES"],
+      "description": "Primary business sector per Udyam classification"
+    },
+    "gstin": {
+      "type": "string",
+      "pattern": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$",
+      "description": "15-character Goods and Services Tax Identification Number"
+    },
+    "pan": {
+      "type": "string",
+      "pattern": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$",
+      "description": "10-character Permanent Account Number"
+    },
+    "registrationDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of Udyam registration or business incorporation"
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "line1": { "type": "string" },
+        "line2": { "type": "string" },
+        "city": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" },
+        "pincode": { "type": "string", "pattern": "^[1-9][0-9]{5}$" }
+      },
+      "required": ["city", "state", "pincode"]
+    },
+    "nicCode": {
+      "type": "string",
+      "pattern": "^[0-9]{2,5}$",
+      "description": "National Industrial Classification code"
+    },
+    "investmentInPlantMachinery": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Investment in plant and machinery/equipment in INR"
+    },
+    "declaredTurnover": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Declared annual turnover in INR as per Udyam"
+    },
+    "linkedAccounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["accountType", "linkedAccRef"],
+        "properties": {
+          "accountType": {
+            "type": "string",
+            "enum": ["BANK_CURRENT", "BANK_SAVINGS", "BANK_OD", "BANK_CC"],
+            "description": "Type of linked financial account"
+          },
+          "linkedAccRef": {
+            "type": "string",
+            "description": "Account Aggregator linked account reference"
+          },
+          "fipId": {
+            "type": "string",
+            "description": "Financial Information Provider ID in AA ecosystem"
+          },
+          "maskedAccNumber": {
+            "type": "string",
+            "description": "Masked account number for display"
+          }
+        }
+      },
+      "description": "Financial accounts linked via Account Aggregator"
+    },
+    "contactEmail": {
+      "type": "string",
+      "format": "email"
+    },
+    "contactMobile": {
+      "type": "string",
+      "pattern": "^[6-9][0-9]{9}$",
+      "description": "10-digit Indian mobile number"
+    },
+    "numberOfEmployees": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Current employee count as declared"
+    },
+    "epfoEstablishmentCode": {
+      "type": "string",
+      "description": "EPFO establishment code if covered under EPF Act (20+ employees)"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

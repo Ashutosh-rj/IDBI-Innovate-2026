@@ -1,0 +1,10 @@
+# Ignore large synthetic cohort generation files
+*.jsonl
+*.csv
+*.parquet
+*.db
+*.sqlite
+*.sqlite3
+synthetic_cohort*
+!.*
+!.gitkeep

@@ -1,0 +1,198 @@
+# 1. MSME Registry Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: msme-registry
+  namespace: msme-health-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: msme-registry
+  template:
+    metadata:
+      labels:
+        app: msme-registry
+    spec:
+      containers:
+        - name: msme-registry
+          image: msme-health/msme-registry:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: msme-platform-config
+            - secretRef:
+                name: msme-platform-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: msme-registry-service
+  namespace: msme-health-platform
+spec:
+  ports:
+    - port: 8081
+      targetPort: 8081
+  selector:
+    app: msme-registry
+
+---
+# 2. Consent & AA Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consent-aa
+  namespace: msme-health-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: consent-aa
+  template:
+    metadata:
+      labels:
+        app: consent-aa
+    spec:
+      containers:
+        - name: consent-aa
+          image: msme-health/consent-aa:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: msme-platform-config
+            - secretRef:
+                name: msme-platform-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consent-aa-service
+  namespace: msme-health-platform
+spec:
+  ports:
+    - port: 8082
+      targetPort: 8082
+  selector:
+    app: consent-aa
+
+---
+# 3. Ingestion Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion
+  namespace: msme-health-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ingestion
+  template:
+    metadata:
+      labels:
+        app: ingestion
+    spec:
+      containers:
+        - name: ingestion
+          image: msme-health/ingestion:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: msme-platform-config
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingestion-service
+  namespace: msme-health-platform
+spec:
+  ports:
+    - port: 8083
+      targetPort: 8083
+  selector:
+    app: ingestion
+
+---
+# 4. Health Card Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: health-card
+  namespace: msme-health-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: health-card
+  template:
+    metadata:
+      labels:
+        app: health-card
+    spec:
+      containers:
+        - name: health-card
+          image: msme-health/health-card:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: msme-platform-config
+            - secretRef:
+                name: msme-platform-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: health-card-service
+  namespace: msme-health-platform
+spec:
+  ports:
+    - port: 8084
+      targetPort: 8084
+  selector:
+    app: health-card
