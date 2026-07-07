@@ -28,7 +28,8 @@ jobs:
 
       - name: Run SGSDG Generator Validation
         run: |
-          PYTHONPATH=data-generators/sgsdg python data-generators/sgsdg/generate_and_validate.py --cohort-size 200 --seed 42 --output-dir /tmp/sgsdg_ci_test
+          mkdir -p /tmp/sgsdg_test
+          PYTHONPATH=data-generators/sgsdg python data-generators/sgsdg/generate_and_validate.py --count 200 --seed 42 --output /tmp/sgsdg_test/synthetic_cohort.jsonl
 
   # 2. Test Scoring Engine & TreeSHAP Monotonicity
   test-scoring-engine:
@@ -47,12 +48,19 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r data-generators/sgsdg/requirements.txt
           pip install -r services/scoring-engine/requirements.txt
           pip install pytest pytest-cov
 
+      - name: Generate Small Cohort for Training Bake-off
+        run: |
+          mkdir -p /tmp/data_ci
+          PYTHONPATH=data-generators/sgsdg python data-generators/sgsdg/generate_and_validate.py --count 200 --seed 42 --output /tmp/data_ci/cohort.jsonl
+
       - name: Train Bake-off Model & Verify Monotonic Constraints
         run: |
-          PYTHONPATH=services/scoring-engine python services/scoring-engine/ml/train.py --cohort-size 500 --output-dir /tmp/models_ci
+          mkdir -p services/scoring-engine/ml/artifacts
+          PYTHONPATH=services/scoring-engine python services/scoring-engine/ml/train.py --data /tmp/data_ci/cohort.jsonl --output services/scoring-engine/ml/artifacts/model.pkl --report /tmp/MODEL_CARD.md
 
       - name: Run Scoring Engine Unit & API Tests
         run: |

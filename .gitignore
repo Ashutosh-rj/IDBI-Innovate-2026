@@ -1,6 +1,6 @@
 # ==============================================================================
 # IDBI Innovate 2026 — Track 03: MSME Financial Health Score Platform
-# Master Root .gitignore — Polyglot Architecture (Java, Python, TS/React, K8s)
+# Master Root .gitignore — Enterprise Polyglot Architecture
 # ==============================================================================
 
 # --- Operating System & General Temporary Files ---
@@ -19,6 +19,21 @@ Thumbs.db
 *.bak
 *.tmp
 /tmp/
+tmp/
+temp/
+
+# --- AI & LLM Assistant Workspaces ---
+.gemini/
+.cursor/
+.cursorrules
+.aider*
+.claude*
+.copilot*
+*.chat
+.system_generated/
+brain/
+.agent/
+scratch/
 
 # --- IDEs & Editors ---
 # VS Code
@@ -45,7 +60,11 @@ out/
 *.jsfdjt
 *.dtpproject
 
-# --- Environment & Secrets ---
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# --- Environment & Security Secrets ---
 .env
 .env.*
 !.env.example
@@ -56,19 +75,27 @@ out/
 *.crt
 *.p12
 *.jks
+*.keystore
+*.truststore
 secret*.yaml
 secret*.yml
 credentials.json
 service-account*.json
+*.kdbx
+*.ovpn
+kubeconfig*
 
-# --- Java & Spring Boot (Maven) ---
+# --- Java & Spring Boot (Maven / Gradle) ---
 target/
+build/
+.gradle/
 *.class
 *.jar
 *.war
 *.ear
 *.nar
 *.zip
+*.tar
 *.tar.gz
 *.rar
 hs_err_pid*
@@ -110,11 +137,13 @@ ENV/
 env.bak/
 venv.bak/
 pyvenv.cfg
+*.cpython*
 
-# Unit Testing & Coverage
+# Unit Testing, Linting & Coverage
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.pytype/
 .coverage
 .coverage.*
 htmlcov/
@@ -126,6 +155,17 @@ coverage.xml
 .hypothesis/
 .catches/
 
+# Jupyter Notebooks & Experiment Tracking
+.ipynb_checkpoints/
+mlruns/
+catboost_info/
+wandb/
+dvc.yaml
+dvc.lock
+.dvc/
+lightgbm_model.txt
+xgboost.json
+
 # ML Model Artifacts & Big Data
 *.model
 *.pkl
@@ -136,12 +176,17 @@ coverage.xml
 *.pt
 *.pth
 *.tflite
+*.safetensors
+*.bin
+*.keras
 saved_models/
 ml/artifacts/
 !services/scoring-engine/models/saved/.gitkeep
 
 # --- JavaScript / TypeScript / React (Vite / PWA) ---
 node_modules/
+jspm_packages/
+web_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -161,6 +206,7 @@ dist-ssr/
 out/
 build/
 coverage/
+.nyc_output/
 
 # --- Docker & Kubernetes Local State ---
 *.log
@@ -177,6 +223,20 @@ grafanadata/
 /infra/grafanadata/
 .tempmediaStorage/
 *.tgz
+*.tar
+*.tar.gz
+
+# --- Terraform & Cloud Infra ---
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
 
 # --- Synthetic Data & Cohorts ---
 data/*.jsonl

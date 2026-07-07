@@ -1,24 +1,15 @@
-# Maven / Spring Boot Microservices Parent .gitignore
 target/
 build/
-.gradle/
 *.class
 *.jar
 *.war
-*.ear
 *.log
 hs_err_pid*
 replay_pid*
-.mvn/wrapper/maven-wrapper.jar
 dependency-reduced-pom.xml
 bin/
 out/
 .spring-beans
 .idea/
 *.iml
-*.iws
-*.ipr
 .vscode/
-*.swp
-*.tmp
-*.bak
