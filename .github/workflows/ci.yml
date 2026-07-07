@@ -99,23 +99,17 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Monorepo Root Dependencies
+      - name: Install All Dependencies (Monorepo Root)
         run: |
-          if [ -f package.json ]; then
-            npm install --no-audit --no-fund
-          fi
+          npm install --no-audit --no-fund
 
       - name: Build Banker Dashboard
         run: |
-          cd apps/banker-dashboard
-          npm install --no-audit --no-fund
-          npm run build
+          npm run build --workspace=banker-dashboard
 
       - name: Build MSME PWA
         run: |
-          cd apps/msme-pwa
-          npm install --no-audit --no-fund
-          npm run build
+          npm run build --workspace=msme-pwa
 
   # 5. Validate Kubernetes Manifests
   validate-k8s-manifests:
