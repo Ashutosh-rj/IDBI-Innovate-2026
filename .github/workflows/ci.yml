@@ -99,17 +99,17 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install All Dependencies (Monorepo Root)
-        run: |
-          npm install --no-audit --no-fund
-
       - name: Build Banker Dashboard
         run: |
-          npm run build --workspace=banker-dashboard
+          cd apps/banker-dashboard
+          npm install --no-audit --no-fund
+          npm run build
 
       - name: Build MSME PWA
         run: |
-          npm run build --workspace=msme-pwa
+          cd apps/msme-pwa
+          npm install --no-audit --no-fund
+          npm run build
 
   # 5. Validate Kubernetes Manifests
   validate-k8s-manifests:
