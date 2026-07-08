@@ -99,15 +99,19 @@ public class SandboxDataSourceAdapter implements DataSourceAdapter {
     public Map<String, Object> fetchAllAlternateData(String msmeId, String gstin, String consentHandle, String scenario) {
         log.info("Sandbox Adapter: Orchestrating full alternate data extraction for MSME [{}] in scenario [{}]", msmeId, scenario);
         
-        Map<String, Object> profile = Map.of(
-                "msmeId", msmeId,
-                "udyamNumber", "UDYAM-MH-12-0001234",
-                "businessName", "IDBI Innovate Sandbox MSME",
-                "category", "SMALL",
-                "sector", "MANUFACTURING",
-                "registrationDate", "2021-04-15",
-                "linkedAccounts", List.of(Map.of("accountType", "BANK_CURRENT"))
-        );
+        String resolvedGstin = gstin != null ? gstin : "27AABCU9603R1ZM";
+        String resolvedPan = resolvedGstin.length() == 15 ? resolvedGstin.substring(2, 12) : "AABCU9603R";
+
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("msmeId", msmeId);
+        profile.put("udyamNumber", "UDYAM-MH-12-0001234");
+        profile.put("businessName", "IDBI Innovate Sandbox MSME");
+        profile.put("category", "SMALL");
+        profile.put("sector", "MANUFACTURING");
+        profile.put("registrationDate", "2021-04-15");
+        profile.put("gstin", resolvedGstin);
+        profile.put("pan", resolvedPan);
+        profile.put("linkedAccounts", List.of(Map.of("accountType", "BANK_CURRENT")));
 
         Map<String, Object> gst = fetchGstFilings(gstin, "2025-01", "2025-12");
         Map<String, Object> upi = fetchUpiSummary("merchant@upi", 12);

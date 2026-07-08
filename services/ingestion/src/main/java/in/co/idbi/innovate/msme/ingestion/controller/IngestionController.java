@@ -3,6 +3,7 @@ package in.co.idbi.innovate.msme.ingestion.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.co.idbi.innovate.msme.ingestion.adapter.DataSourceAdapter;
 import in.co.idbi.innovate.msme.ingestion.kafka.AltDataEventProducer;
+import in.co.idbi.innovate.msme.ingestion.service.FraudValidationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ public class IngestionController {
 
     private final DataSourceAdapter dataSourceAdapter;
     private final AltDataEventProducer eventProducer;
+    private final FraudValidationService fraudValidationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/fetch")
@@ -30,6 +32,10 @@ public class IngestionController {
                 request.getConsentHandle(),
                 request.getScenario()
         );
+
+        // Execute automated fraud & anomaly checks (AUDIT-T3-2)
+        Map<String, Object> fraudAnalysis = fraudValidationService.performFraudChecks(payload);
+        payload.put("fraudAnalysis", fraudAnalysis);
 
         // Publish to Kafka event backbone
         try {

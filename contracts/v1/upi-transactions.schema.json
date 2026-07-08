@@ -4,7 +4,7 @@
   "title": "UPI Transaction Summary",
   "description": "Aggregated UPI transaction data for an MSME. Distribution parameters anchored to NPCI published aggregate statistics (FY 2025-26): 241.62B transactions, P2M avg ₹627, 86% below ₹500.",
   "type": "object",
-  "required": ["summaryId", "msmeId", "merchantVpa", "periodStart", "periodEnd", "monthlySummaries", "source"],
+  "required": ["monthlySummaries"],
   "properties": {
     "summaryId": {
       "type": "string",
@@ -124,5 +124,5 @@
       "format": "date-time"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

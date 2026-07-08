@@ -44,6 +44,16 @@ public class ConsentController {
         return ResponseEntity.ok(consentService.getConsentsForMsme(msmeId));
     }
 
+    @GetMapping("/verify-chain/{msmeId}")
+    public ResponseEntity<java.util.Map<String, Object>> verifyChain(@PathVariable String msmeId) {
+        boolean valid = consentService.verifyHashChain(msmeId);
+        return ResponseEntity.ok(java.util.Map.of(
+                "msmeId", msmeId,
+                "chainValid", valid,
+                "timestamp", java.time.LocalDateTime.now().toString()
+        ));
+    }
+
     @GetMapping("/{handle}")
     public ResponseEntity<ConsentLedgerEntity> getByHandle(@PathVariable String handle) {
         return consentService.getConsentByHandle(handle)

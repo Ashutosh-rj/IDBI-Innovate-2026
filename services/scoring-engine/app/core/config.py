@@ -29,6 +29,10 @@ class Settings(BaseSettings):
         "ml", "artifacts", "model.pkl"
     )
     MODEL_TYPE_DEFAULT: str = "xgboost" # xgboost or lightgbm
+    RISK_POLICY_PATH: str = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "rules", "risk_policy.yaml"
+    )
     
     # Scoring Thresholds & Slopes (Platt / Brier Scaling)
     SCORE_MIN: int = 300

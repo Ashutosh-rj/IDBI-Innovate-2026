@@ -33,9 +33,12 @@ class ShapExplainer:
             
         # Pair features with their SHAP contribution
         attributions = []
+        all_attributions = {}
         for fname, sval in zip(self.feature_names, shap_vals):
-            if not math.isnan(sval) and abs(sval) > 1e-6:
-                attributions.append((fname, float(sval)))
+            val = float(sval) if not math.isnan(sval) else 0.0
+            all_attributions[fname] = round(val, 4)
+            if abs(val) > 1e-6:
+                attributions.append((fname, val))
                 
         # Sort by absolute impact (highest magnitude first)
         attributions.sort(key=lambda x: abs(x[1]), reverse=True)
@@ -54,5 +57,5 @@ class ShapExplainer:
             "shapSum": round(shap_sum, 4),
             "rawLogit": round(raw_logit, 4),
             "topReasonCodes": top_reasons,
-            "allFeatureAttributions": {k: round(v, 4) for k, v in attributions}
+            "allFeatureAttributions": all_attributions
         }

@@ -1,0 +1,120 @@
+# ==============================================================================
+# MSME Financial Health Score Platform — Service Mesh mTLS Scaffolding (AUDIT-T3-4)
+# ==============================================================================
+# This file contains production-ready Zero-Trust Mutual TLS (mTLS) configurations
+# for both Istio and Linkerd service meshes. Apply the section corresponding
+# to your cluster's service mesh architecture.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# PART 1: ISTIO SERVICE MESH CONFIGURATION
+# ------------------------------------------------------------------------------
+# 1.1 Strict mTLS PeerAuthentication Policy
+# Enforces that all pod-to-pod traffic within the namespace MUST use mTLS
+# with X.509 cryptographic identities issued by Istiod / SPIFFE. Plaintext rejected.
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default-strict-mtls
+  namespace: msme-health-platform
+  labels:
+    app.kubernetes.io/part-of: msme-health-platform
+    security.idbi.innovate/tier: tier-3
+spec:
+  mtls:
+    mode: STRICT
+---
+# 1.2 Zero-Trust AuthorizationPolicy: API Gateway -> Microservices
+# Restricts access to core business microservices exclusively to authenticated
+# requests originating from the API Gateway sidecar proxy.
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-services
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["msme-registry", "consent-aa", "ingestion", "health-card", "scoring-engine"]
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/msme-health-platform/sa/api-gateway-sa"]
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+---
+# 1.3 AuthorizationPolicy: Microservices -> Data Layer & Event Backbone
+# Restricts access to PostgreSQL, Redis, and Kafka exclusively to authorized backend services.
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-backend-to-data-layer
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["postgres", "redis", "kafka"]
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/msme-health-platform/sa/msme-registry-sa"
+              - "cluster.local/ns/msme-health-platform/sa/consent-aa-sa"
+              - "cluster.local/ns/msme-health-platform/sa/ingestion-sa"
+              - "cluster.local/ns/msme-health-platform/sa/health-card-sa"
+              - "cluster.local/ns/msme-health-platform/sa/scoring-engine-sa"
+              - "cluster.local/ns/msme-health-platform/sa/api-gateway-sa"
+
+# ==============================================================================
+# PART 2: LINKERD SERVICE MESH CONFIGURATION (Alternative to Istio)
+# ==============================================================================
+# 2.1 Linkerd Server Definition for Backend APIs
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: backend-rest-apis
+  namespace: msme-health-platform
+  labels:
+    app.kubernetes.io/part-of: msme-health-platform
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: ["msme-registry", "consent-aa", "ingestion", "health-card", "scoring-engine"]
+  port: rest-api
+  proxyProtocol: HTTP/2
+---
+# 2.2 Linkerd MeshTLSAuthentication
+# Requires valid SPIFFE X.509 identity from the Linkerd identity issuer.
+apiVersion: policy.linkerd.io/v1beta1
+kind: MeshTLSAuthentication
+metadata:
+  name: api-gateway-client-auth
+  namespace: msme-health-platform
+spec:
+  identities:
+    - "api-gateway.msme-health-platform.serviceaccount.identity.linkerd.cluster.local"
+---
+# 2.3 Linkerd ServerAuthorization
+# Binds the MeshTLSAuthentication to the backend REST API Server.
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: allow-gateway-to-backend-server
+  namespace: msme-health-platform
+spec:
+  server:
+    name: backend-rest-apis
+  client:
+    meshTLS:
+      identities:
+        - "api-gateway.msme-health-platform.serviceaccount.identity.linkerd.cluster.local"

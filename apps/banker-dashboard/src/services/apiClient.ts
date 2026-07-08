@@ -87,8 +87,8 @@ export async function fetchLiveCohort(baseProfiles: MsmeProfile[]): Promise<Msme
  */
 export async function simulateWhatIfLive(profile: MsmeProfile, modifications: Record<string, number>): Promise<any> {
   const payload = {
-    profile: { msmeId: profile.msmeId, businessName: profile.businessName },
-    modifications: modifications
+    basePayload: buildScoringPayload(profile),
+    featureOverrides: modifications
   };
 
   try {

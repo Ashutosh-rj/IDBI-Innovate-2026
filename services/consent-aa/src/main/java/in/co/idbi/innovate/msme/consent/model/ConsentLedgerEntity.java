@@ -51,15 +51,22 @@ public class ConsentLedgerEntity {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false, length = 64)
+    private String entryHash;
+
+    @Column(length = 64)
+    private String previousHash;
+
+    @Transient
+    private String ephemeralX25519PublicKey;
+
+    @Transient
+    private String jwsDetachedSignature;
+
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        if (createdAt == null) createdAt = LocalDateTime.now();
+        if (updatedAt == null) updatedAt = createdAt;
     }
 
     public enum ConsentStatus {

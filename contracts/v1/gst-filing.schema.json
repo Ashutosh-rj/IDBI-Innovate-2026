@@ -4,7 +4,7 @@
   "title": "GST Filing Record (GSTR-3B)",
   "description": "Represents a single GSTR-3B monthly return filing. Field names and structure mirror the GSTN Developer Portal schema. Compliance metadata (filing_status, filing_date, due_date) is appended for scoring use.",
   "type": "object",
-  "required": ["filingId", "msmeId", "gstin", "retPeriod", "supDetails", "itcElg", "filingStatus", "dueDate"],
+  "required": ["gstin", "supDetails", "filingStatus"],
   "properties": {
     "filingId": {
       "type": "string",
@@ -13,17 +13,14 @@
     },
     "msmeId": {
       "type": "string",
-      "format": "uuid",
       "description": "Reference to the MSME entity"
     },
     "gstin": {
-      "type": "string",
-      "pattern": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+      "type": "string"
     },
     "retPeriod": {
       "type": "string",
-      "pattern": "^(0[1-9]|1[0-2])\\d{4}$",
-      "description": "Return period in MMYYYY format as per GSTN"
+      "description": "Return period in MMYYYY or YYYY-MM format as per GSTN"
     },
     "supDetails": {
       "type": "object",
@@ -197,5 +194,5 @@
       }
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

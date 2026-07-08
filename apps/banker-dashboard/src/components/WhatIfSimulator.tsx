@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { MsmeProfile } from '../types';
 import { Sliders, Zap, ShieldCheck, RotateCcw } from 'lucide-react';
+import { simulateWhatIfLive } from '../services/apiClient';
 
 interface WhatIfSimulatorProps {
   msme: MsmeProfile;
@@ -13,30 +14,52 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme }) => {
   const [bounces, setBounces] = useState<number>(msme.keyMetrics.chequeBounces);
   const [epfMembers, setEpfMembers] = useState<number>(msme.keyMetrics.epfActiveMembers);
 
-  // Calculate simulation delta mathematically based on TreeSHAP feature importance weights
+  const [simulatedScore, setSimulatedScore] = useState<number>(msme.healthScore);
+  const [newRiskBand, setNewRiskBand] = useState<string>(msme.riskBand);
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const runSim = async () => {
+      setIsSimulating(true);
+      try {
+        const overrides = {
+          gst_filing_regularity: gstr3b / 100.0,
+          aa_od_limit_utilization: odUtil / 100.0,
+          aa_bounce_flag: bounces > 0 ? 1.0 : 0.0,
+          epfo_active_members: epfMembers
+        };
+        const res = await simulateWhatIfLive(msme, overrides);
+        if (isMounted && res && res.simulated) {
+          setSimulatedScore(res.simulated.healthScore);
+          setNewRiskBand(res.simulated.riskBand);
+        }
+      } catch (err) {
+        // Fallback calculation if offline
+        const gstrDiff = (gstr3b - msme.keyMetrics.gstr3bRegularity * 100);
+        const odDiff = (msme.keyMetrics.odUtilization * 100 - odUtil);
+        const bounceDiff = (msme.keyMetrics.chequeBounces - bounces);
+        const epfDiff = (epfMembers - msme.keyMetrics.epfActiveMembers);
+        const deltaFallback = Math.round(gstrDiff * 0.45 + odDiff * 0.50 + bounceDiff * 30 + epfDiff * 0.30);
+        const simScore = Math.min(900, Math.max(300, msme.healthScore + deltaFallback));
+        if (isMounted) {
+          setSimulatedScore(simScore);
+          setNewRiskBand(simScore >= 700 ? 'PRIME_RISK' : simScore >= 600 ? 'MODERATE_RISK' : 'HIGH_RISK');
+        }
+      } finally {
+        if (isMounted) setIsSimulating(false);
+      }
+    };
+    
+    const timer = setTimeout(runSim, 300); // debounce 300ms
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [gstr3b, odUtil, bounces, epfMembers, msme]);
+
   const baseScore = msme.healthScore;
-  
-  // Delta calculation logic matching XGBoost feature attributions
-  let delta = 0;
-  
-  // 1. GSTR-3B regularity effect (up to +35 pts for reaching 100%)
-  const gstrDiff = (gstr3b - msme.keyMetrics.gstr3bRegularity * 100);
-  delta += Math.round(gstrDiff * 0.45);
-
-  // 2. OD Utilization effect (reducing OD util below 50% boosts score by up to 40 pts)
-  const odDiff = (msme.keyMetrics.odUtilization * 100 - odUtil);
-  delta += Math.round(odDiff * 0.50);
-
-  // 3. Cheque Bounces effect (each eliminated bounce adds +30 pts)
-  const bounceDiff = (msme.keyMetrics.chequeBounces - bounces);
-  delta += (bounceDiff * 30);
-
-  // 4. EPF workforce growth
-  const epfDiff = (epfMembers - msme.keyMetrics.epfActiveMembers);
-  delta += Math.round(epfDiff * 0.30);
-
-  const simulatedScore = Math.min(900, Math.max(300, baseScore + delta));
-  const newRiskBand = simulatedScore >= 700 ? 'PRIME_RISK' : simulatedScore >= 600 ? 'MODERATE_RISK' : 'HIGH_RISK';
+  const delta = simulatedScore - baseScore;
 
   const resetSliders = () => {
     setGstr3b(msme.keyMetrics.gstr3bRegularity * 100);

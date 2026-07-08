@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 import structlog
 from core.config import settings
-from api.routes import score, health_card, simulate
+from api.routes import score, health_card, simulate, monitoring
 
 logger = structlog.get_logger()
 
@@ -29,6 +29,7 @@ api_router = APIRouter()
 api_router.include_router(score.router, prefix="/score", tags=["Scoring Engine"])
 api_router.include_router(health_card.router, prefix="/health-card", tags=["Health Card & OCEN"])
 api_router.include_router(simulate.router, prefix="/simulate", tags=["What-If Simulation"])
+api_router.include_router(monitoring.router, prefix="/monitoring", tags=["Drift & Calibration Monitoring"])
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 

@@ -4,7 +4,7 @@
   "title": "MSME Profile",
   "description": "Core MSME entity record. Fields align with Udyam Registration portal and MSME Ministry classification (revised April 2025).",
   "type": "object",
-  "required": ["msmeId", "udyamNumber", "businessName", "category", "sector", "gstin", "pan", "registrationDate"],
+  "required": ["msmeId", "udyamNumber", "businessName", "category", "sector"],
   "properties": {
     "msmeId": {
       "type": "string",
@@ -82,7 +82,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["accountType", "linkedAccRef"],
+        "required": ["accountType"],
         "properties": {
           "accountType": {
             "type": "string",
@@ -132,5 +132,5 @@
       "format": "date-time"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

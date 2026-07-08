@@ -6,3 +6,7 @@ metadata:
     name: msme-health-platform
     environment: production
     track: idbi-innovate-track03
+    # Service Mesh mTLS Sidecar Auto-Injection (AUDIT-T3-4)
+    # Uncomment one of the following based on cluster mesh provider:
+    istio-injection: enabled
+    # linkerd.io/inject: enabled

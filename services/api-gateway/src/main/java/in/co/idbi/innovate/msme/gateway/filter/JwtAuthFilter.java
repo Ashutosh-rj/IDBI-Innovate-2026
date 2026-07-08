@@ -4,10 +4,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.core.env.Environment;
+import jakarta.annotation.PostConstruct;
+import java.util.Arrays;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -22,8 +26,19 @@ import java.util.List;
 @Slf4j
 public class JwtAuthFilter implements GlobalFilter, Ordered {
 
-    @Value("${jwt.secret:9a4f2c8d3b7a1e6f45c8a0b3f267d8b1d4e6f3c8a9d0b1e5f8a3c9d2e7f1b4a0}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
+
+    @Autowired
+    private Environment env;
+
+    @PostConstruct
+    public void validateSecret() {
+        if (jwtSecret == null || jwtSecret.trim().isEmpty() || jwtSecret.length() < 32) {
+            log.error("FATAL: JWT secret is missing or less than 32 characters (256 bits). Refusing to start (AUDIT-T0-2).");
+            throw new IllegalStateException("FATAL: JWT secret is missing or insecure. Minimum 256 bits required.");
+        }
+    }
 
     private static final List<String> OPEN_ENDPOINTS = List.of(
             "/health", "/actuator", "/api/v1/auth", "/docs", "/redoc", "/openapi.json"
@@ -41,14 +56,15 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("Missing or invalid Authorization header for path: [{}]", path);
-            // For POC demo ease and What-If simulation testing without logging in, we allow fallback guest headers
-            // In strict production, uncomment the following line:
-            // return onError(exchange, HttpStatus.UNAUTHORIZED);
-            ServerHttpRequest mutated = exchange.getRequest().mutate()
-                    .header("X-User-Id", "GUEST-DEMO")
-                    .header("X-User-Role", "BANK_OFFICER")
-                    .build();
-            return chain.filter(exchange.mutate().request(mutated).build());
+            if (env != null && Arrays.asList(env.getActiveProfiles()).contains("dev-bypass")) {
+                log.warn("DEV-BYPASS active: Injecting fallback GUEST-DEMO header for path [{}]", path);
+                ServerHttpRequest mutated = exchange.getRequest().mutate()
+                        .header("X-User-Id", "GUEST-DEMO")
+                        .header("X-User-Role", "BANK_OFFICER")
+                        .build();
+                return chain.filter(exchange.mutate().request(mutated).build());
+            }
+            return onError(exchange, HttpStatus.UNAUTHORIZED);
         }
 
         String token = authHeader.substring(7);

@@ -31,6 +31,16 @@ This document records key architectural, statistical, and engineering decisions 
 *   **Decision**: Build **both**. A React 18 + Vite + TypeScript web dashboard for Bank Officers (with radar charts, SHAP waterfalls, and what-if simulation) AND a responsive Progressive Web App (PWA) shell for MSME Owners (with health card view, consent management, and credit-readiness checklist).
 *   **Rationale**: Crucial for scoring highly on the "Financial Inclusion" judging weight by showing direct borrower empowerment.
 
+### DEC-006: Audit Tier 0 Cryptography, Hash Chaining & OCEN Adapter Implementation
+*   **Context**: Remediation of AUDIT-T0-4, T0-5, and T0-6 required implementing ReBIT AA v2.0 cryptography, consent ledger hash chaining, and real OCEN ULI adapter integration.
+*   **Decision**: Implemented per-MSME SHA-256 hash chaining in `consent_ledger` (preventing global DB contention), BouncyCastle X25519 ephemeral key generation, detached JWS RS256 payload signing, and Spring Boot 3 `RestClient` integration with idempotency headers and offline fallback.
+*   **Rationale**: Fully compliant with RBI Account Aggregator technical guidelines and OCEN 4.0 LSP specifications while ensuring robust developer experience and zero external network dependencies during offline testing.
+
+### DEC-007: Audit Tier 1 Consent Expiry Sweep & Secret Management
+*   **Context**: Remediation of AUDIT-T1-4 and AUDIT-T1-5 required automated consent expiration handling and formal elimination of plaintext Kubernetes secrets.
+*   **Decision**: Implemented a `@Scheduled(fixedRateString = "${consent.sweep.interval:60000}")` sweep job (`ConsentExpirySweepJob`) in `consent-aa` that transitions expired consents to `EXPIRED`, updates the SHA-256 hash chain, and emits a `CONSENT_REVOKED_EVENT` to Kafka. For secrets, permanently removed `k8s/02-configmaps-secrets.yaml` from git tracking and documented 90-day/60-day rotation schedules and Bitnami Sealed Secrets re-sealing procedures in `COMPLIANCE.md`.
+*   **Rationale**: Ensures DPDP Act compliance (Section 6(4) & 12) by automatically halting alternate data ingestion upon consent expiration while preserving an immutable audit trail. Eliminating plaintext secrets satisfies ISO/IEC 27001 and RBI cybersecurity controls.
+
 ---
 
 ## Open Engineering Notes (To Monitor During Build)

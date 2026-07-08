@@ -1,0 +1,57 @@
+# MSME Financial Health Scoring — External Risk Band Policy Rules (AUDIT-T3-1)
+# Governed by IDBI Bank Risk Committee & RBI Fair Lending Guidelines
+# This external policy layer allows risk cutoffs, loan limits, and interest rates to be modified or hot-reloaded
+# without altering code or re-compiling the scoring engine.
+
+version: "2026.07.v1"
+lastUpdated: "2026-07-08"
+description: "Externalized risk band policy rules for MSME financial health scoring (AUDIT-T3-1)"
+
+riskBands:
+  - name: "PRIME_LOW_RISK"
+    minScore: 750
+    maxScore: 1000
+    ocenEligibility:
+      isEligible: true
+      maxLoanAmountInr: 5000000.0
+      recommendedInterestRatePa: 10.5
+    ntcThinFileRules:
+      isEligible: true
+      maxLoanAmountInr: 5000000.0
+      recommendedInterestRatePa: 10.5
+
+  - name: "STANDARD_MODERATE_RISK"
+    minScore: 650
+    maxScore: 749
+    ocenEligibility:
+      isEligible: true
+      maxLoanAmountInr: 2500000.0
+      recommendedInterestRatePa: 12.5
+    ntcThinFileRules:
+      isEligible: true
+      maxLoanAmountInr: 2500000.0
+      recommendedInterestRatePa: 12.5
+
+  - name: "SUBPRIME_HIGH_RISK"
+    minScore: 550
+    maxScore: 649
+    ocenEligibility:
+      isEligible: true
+      maxLoanAmountInr: 1000000.0
+      recommendedInterestRatePa: 15.0
+    ntcThinFileRules:
+      isEligible: true
+      maxLoanAmountInr: 1000000.0
+      recommendedInterestRatePa: 15.0
+
+  - name: "HIGH_RISK_REJECT"
+    minScore: 0
+    maxScore: 549
+    ocenEligibility:
+      isEligible: false
+      maxLoanAmountInr: 0.0
+      recommendedInterestRatePa: 0.0
+    ntcThinFileRules:
+      isEligible: false
+      maxLoanAmountInr: 0.0
+      recommendedInterestRatePa: 0.0

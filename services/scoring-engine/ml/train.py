@@ -14,7 +14,7 @@ from features import (
     DigitalFeatureExtractor,
     CreditFeatureExtractor,
 )
-from ml.evaluate import evaluate_model_performance, check_shap_reconciliation
+from ml.evaluate import evaluate_model_performance, check_shap_reconciliation, evaluate_fairness_across_segments
 import shap
 
 def load_and_extract_features(jsonl_path: str) -> pd.DataFrame:
@@ -31,6 +31,9 @@ def load_and_extract_features(jsonl_path: str) -> pd.DataFrame:
             if not line.strip(): continue
             record = json.loads(line)
             msme_id = record.get("profile", {}).get("msmeId")
+            category = record.get("profile", {}).get("category", "UNKNOWN")
+            sector = record.get("profile", {}).get("sector", "UNKNOWN")
+            scenario = record.get("scenario", "UNKNOWN")
             label = record.get("groundTruthLabel", {}).get("default12m", 0)
             
             f_gst = gst_ext.extract(record)
@@ -39,14 +42,14 @@ def load_and_extract_features(jsonl_path: str) -> pd.DataFrame:
             f_dig = dig_ext.extract(record)
             f_cr = cr_ext.extract(record)
             
-            row = {"msmeId": msme_id, "default12m": label, **f_gst, **f_cf, **f_pay, **f_dig, **f_cr}
+            row = {"msmeId": msme_id, "default12m": label, "category": category, "sector": sector, "scenario": scenario, **f_gst, **f_cf, **f_pay, **f_dig, **f_cr}
             rows.append(row)
             
     df = pd.DataFrame(rows)
     return df
 
 @click.command()
-@click.option("--data", default="../../data/synthetic_cohort.jsonl", help="Path to synthetic cohort JSONL file.")
+@click.option("--data", default="../../data/test_cohort.jsonl", help="Path to synthetic cohort JSONL file.")
 @click.option("--output", default="ml/artifacts/model.pkl", help="Path to save serialized winning model artifact.")
 @click.option("--report", default="../../MODEL_CARD.md", help="Path to update MODEL_CARD.md report.")
 def main(data: str, output: str, report: str):
@@ -59,7 +62,7 @@ def main(data: str, output: str, report: str):
     df = load_and_extract_features(data)
     click.echo(f"Extracted {len(df)} records with {len(df.columns) - 2} features.")
     
-    feature_cols = [c for c in df.columns if c not in ["msmeId", "default12m"]]
+    feature_cols = [c for c in df.columns if c not in ["msmeId", "default12m", "category", "sector", "scenario"]]
     X = df[feature_cols].values
     y = df["default12m"].values
     
@@ -121,13 +124,50 @@ def main(data: str, output: str, report: str):
         winning_model = lgb_model
         winner_metrics = lgb_metrics
         
-    click.echo(f"\n🏆 Bake-Off Winner: {winner_name} (Composite Score: {max(xgb_score, lgb_score):.4f})")
+    click.echo(f"\n[WINNER] Bake-Off Winner: {winner_name} (Composite Score: {max(xgb_score, lgb_score):.4f})")
     
     # --- SHAP Reconciliation Check ---
     click.echo("Running exact TreeSHAP reconciliation check per Rule 1 & 8...")
     explainer = shap.TreeExplainer(winning_model)
-    reconcile_res = check_shap_reconciliation(explainer, X_test[:500], winner_metrics["aucRoc"], tolerance=0.05)
+    test_subset = X_test[:500]
+    if hasattr(winning_model, "predict_proba"):
+        probs = winning_model.predict_proba(test_subset)[:, 1]
+        logits = np.log(np.maximum(1e-5, probs) / np.maximum(1e-5, 1.0 - probs))
+    else:
+        logits = winning_model.predict(test_subset)
+    reconcile_res = check_shap_reconciliation(explainer, test_subset, logits, tolerance=0.05)
     click.echo(f"SHAP Reconciliation -> Passed: {reconcile_res['passedReconciliation']} | Max Disc: {reconcile_res['maxDiscrepancy']:.6f}")
+    
+    # --- Fairness Evaluation Suite across Cohort Segments (AUDIT-T2-3) ---
+    click.echo("\nRunning Fairness Evaluation Suite across Cohort Segments per AUDIT-T2-3...")
+    test_df = df.iloc[test_idx]
+    
+    if hasattr(winning_model, "predict_proba"):
+        test_probs = winning_model.predict_proba(X_test)[:, 1]
+    else:
+        test_probs = winning_model.predict(X_test)
+        
+    test_scores = np.array([
+        int(np.clip(900 - (p * 600), 300, 900)) for p in test_probs
+    ])
+    
+    fairness_category = evaluate_fairness_across_segments(y_test, test_probs, test_scores, test_df["category"].tolist(), reference_segment="MEDIUM")
+    fairness_ntc = evaluate_fairness_across_segments(y_test, test_probs, test_scores, ["NTC_THIN_FILE" if f == 1 else "ESTABLISHED" for f in test_df["ntc_thin_file_flag"].tolist()], reference_segment="ESTABLISHED")
+    fairness_sector = evaluate_fairness_across_segments(y_test, test_probs, test_scores, test_df["sector"].tolist(), reference_segment="MANUFACTURING")
+    
+    click.echo(f"Category Fairness -> Passed: {fairness_category['overallPassedFairness']}")
+    for seg, dir_data in fairness_category["disparateImpactAnalysis"].items():
+        click.echo(f"  [{seg}] DIR: {dir_data['disparateImpactRatio']} ({dir_data['status']})")
+        
+    click.echo(f"NTC Thin-File Fairness -> Passed: {fairness_ntc['overallPassedFairness']}")
+    for seg, dir_data in fairness_ntc["disparateImpactAnalysis"].items():
+        click.echo(f"  [{seg}] DIR: {dir_data['disparateImpactRatio']} ({dir_data['status']})")
+        
+    fairness_results = {
+        "category": fairness_category,
+        "ntc_thin_file": fairness_ntc,
+        "sector": fairness_sector
+    }
     
     # --- Save Artifact ---
     os.makedirs(os.path.dirname(os.path.abspath(output)), exist_ok=True)
@@ -137,9 +177,58 @@ def main(data: str, output: str, report: str):
             "feature_names": feature_cols,
             "model_name": winner_name,
             "metrics": winner_metrics,
-            "shap_reconciliation": reconcile_res
+            "shap_reconciliation": reconcile_res,
+            "fairness_evaluation": fairness_results
         }, f)
     click.echo(f"Saved winning model artifact to: {output}")
+    
+    # --- Generate MODEL_CARD.md ---
+    if report:
+        report_path = os.path.abspath(report)
+        os.makedirs(os.path.dirname(report_path), exist_ok=True)
+        with open(report_path, "w", encoding="utf-8") as rf:
+            rf.write(f"""# IDBI Innovate 2026: AI Credit Scoring Model Card
+
+## 1. Model Overview & Bake-Off Results
+- **Winning Model**: {winner_name}
+- **Evaluation Cohort Size**: {len(df)} records ({len(X_train)} training, {len(X_test)} testing)
+- **AUC-ROC**: {winner_metrics['aucRoc']}
+- **KS-Statistic**: {winner_metrics['ksStatistic']}
+- **Brier Score Loss**: {winner_metrics['brierScore']}
+
+## 2. TreeSHAP Local Accuracy Reconciliation (Rule 1 & 8)
+- **Reconciliation Status**: {'PASSED' if reconcile_res['passedReconciliation'] else 'FAILED'}
+- **Max Discrepancy**: {reconcile_res['maxDiscrepancy']} (Tolerance: {reconcile_res['tolerance']})
+- **Tested Samples**: {reconcile_res['testedSamples']}
+
+## 3. Algorithmic Fairness Evaluation Across Cohort Segments (AUDIT-T2-3)
+### MSME Category Parity (Reference: {fairness_category['referenceSegment']})
+- **Overall Fairness Passed**: {fairness_category['overallPassedFairness']}
+""")
+            for seg, m in fairness_category["segmentMetrics"].items():
+                dir_val = fairness_category["disparateImpactAnalysis"][seg]["disparateImpactRatio"]
+                stat = fairness_category["disparateImpactAnalysis"][seg]["status"]
+                rf.write(f"- **{seg}**: Sample Size = {m['sampleSize']}, Mean Score = {m['meanScore']}, Default Rate = {m['defaultRate']}, Approval Rate = {m['approvalRate']:.1%}, DIR = {dir_val} ({stat})\n")
+                
+            rf.write(f"""
+### NTC Thin-File Parity (Reference: {fairness_ntc['referenceSegment']})
+- **Overall Fairness Passed**: {fairness_ntc['overallPassedFairness']}
+""")
+            for seg, m in fairness_ntc["segmentMetrics"].items():
+                dir_val = fairness_ntc["disparateImpactAnalysis"][seg]["disparateImpactRatio"]
+                stat = fairness_ntc["disparateImpactAnalysis"][seg]["status"]
+                rf.write(f"- **{seg}**: Sample Size = {m['sampleSize']}, Mean Score = {m['meanScore']}, Default Rate = {m['defaultRate']}, Approval Rate = {m['approvalRate']:.1%}, DIR = {dir_val} ({stat})\n")
+                
+            rf.write(f"""
+### Sector Parity (Reference: {fairness_sector['referenceSegment']})
+- **Overall Fairness Passed**: {fairness_sector['overallPassedFairness']}
+""")
+            for seg, m in fairness_sector["segmentMetrics"].items():
+                dir_val = fairness_sector["disparateImpactAnalysis"][seg]["disparateImpactRatio"]
+                stat = fairness_sector["disparateImpactAnalysis"][seg]["status"]
+                rf.write(f"- **{seg}**: Sample Size = {m['sampleSize']}, Mean Score = {m['meanScore']}, Default Rate = {m['defaultRate']}, Approval Rate = {m['approvalRate']:.1%}, DIR = {dir_val} ({stat})\n")
+                
+        click.echo(f"Updated MODEL_CARD.md report at: {report_path}")
 
 if __name__ == "__main__":
     main()

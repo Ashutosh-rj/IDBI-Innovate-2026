@@ -11,4 +11,7 @@ public interface ConsentRepository extends JpaRepository<ConsentLedgerEntity, St
     Optional<ConsentLedgerEntity> findByConsentHandle(String consentHandle);
     List<ConsentLedgerEntity> findByMsmeId(String msmeId);
     List<ConsentLedgerEntity> findByMsmeIdAndStatus(String msmeId, ConsentLedgerEntity.ConsentStatus status);
+    Optional<ConsentLedgerEntity> findFirstByMsmeIdOrderByCreatedAtDesc(String msmeId);
+    List<ConsentLedgerEntity> findByMsmeIdOrderByCreatedAtAsc(String msmeId);
+    List<ConsentLedgerEntity> findByStatusAndConsentExpiryBefore(ConsentLedgerEntity.ConsentStatus status, java.time.LocalDateTime now);
 }

@@ -7,6 +7,21 @@ on:
     branches: [ main, master ]
 
 jobs:
+  # 0. Secret Leakage & Credential Scanning (AUDIT-T0-3)
+  secret-scanning:
+    name: Secret & Credential Scanning (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Secret Scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
   # 1. Validate Synthetic Data Engine (SGSDG) & KS Drift
   validate-synthetic-data:
     name: Validate SGSDG & KS Distribution Drift
@@ -127,3 +142,67 @@ jobs:
       - name: Validate all YAML manifests in /k8s
         run: |
           kubeconform -summary -verbose k8s/
+
+  # 6. Static Application Security Testing (SAST) via Semgrep (AUDIT-T3-6)
+  sast-scanning:
+    name: Semgrep SAST Code Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep SAST Code Scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/default
+            p/owasp-top-ten
+            p/secrets
+            p/java
+            p/python
+            p/javascript
+            p/typescript
+
+  # 7. Container & Dependency Vulnerability Scanning via Trivy & Grype (AUDIT-T3-6)
+  container-scanning:
+    name: Trivy & Grype Container Vulnerability Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy FS Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Grype FS Vulnerability Scan
+        uses: anchore/scan-action@v3
+        with:
+          path: '.'
+          fail-build: false
+          severity-cutoff: 'critical'
+
+      - name: Build Scoring Engine Docker Image for Scanning
+        run: |
+          docker build -t msme-scoring-engine:ci -f services/scoring-engine/Dockerfile .
+
+      - name: Scan Scoring Engine Image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'msme-scoring-engine:ci'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan Scoring Engine Image with Grype
+        uses: anchore/scan-action@v3
+        with:
+          image: 'msme-scoring-engine:ci'
+          fail-build: false
+          severity-cutoff: 'critical'
+

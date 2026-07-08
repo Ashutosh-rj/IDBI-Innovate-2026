@@ -4,7 +4,7 @@
   "title": "MSME Financial Health Score Result",
   "description": "Output of the ML Scoring Engine. Contains composite score (0-1000), 5 sub-scores, SHAP feature attributions, human-readable reason codes ranked by magnitude, and confidence intervals.",
   "type": "object",
-  "required": ["scoreId", "msmeId", "timestamp", "compositeScore", "subScores", "shapAttributions", "reasonCodes", "modelVersion", "ntcFlag"],
+  "required": ["msmeId", "healthScore", "riskBand", "subScores", "isNtcThinFile", "dataQualityScore"],
   "properties": {
     "scoreId": {
       "type": "string",
@@ -12,135 +12,80 @@
       "description": "Unique identifier for this scoring computation"
     },
     "msmeId": {
-      "type": "string",
-      "format": "uuid"
+      "type": "string"
     },
     "timestamp": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When the inference was executed"
+      "type": "string"
     },
-    "compositeScore": {
+    "healthScore": {
       "type": "number",
       "minimum": 0,
       "maximum": 1000,
       "description": "Overall financial health score on a 0-1000 scale"
     },
-    "scoreBand": {
-      "type": "string",
-      "enum": ["EXCELLENT", "GOOD", "FAIR", "POOR", "HIGH_RISK"],
-      "description": "Categorical risk band based on composite score"
+    "compositeScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1000
     },
-    "ntcFlag": {
+    "riskBand": {
+      "type": "string",
+      "enum": ["PRIME_LOW_RISK", "STANDARD_MODERATE_RISK", "SUBPRIME_HIGH_RISK", "HIGH_RISK_REJECT", "EXCELLENT", "GOOD", "FAIR", "POOR", "HIGH_RISK", "MODERATE_RISK"],
+      "description": "Categorical risk band based on composite score and fraud checks"
+    },
+    "scoreBand": {
+      "type": "string"
+    },
+    "defaultProbability12m": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "isNtcThinFile": {
       "type": "boolean",
       "description": "True if the entity is New-to-Credit (NTC) / thin-file"
     },
+    "ntcFlag": {
+      "type": "boolean"
+    },
     "subScores": {
       "type": "object",
-      "required": ["gstCompliance", "cashFlowStability", "payrollStability", "digitalFootprint", "creditBehavior"],
       "properties": {
-        "gstCompliance": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "GST filing timeliness, turnover consistency, ITC matching"
-        },
-        "cashFlowStability": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "UPI/bank transaction volatility, STL seasonality, inflow/outflow ratio"
-        },
-        "payrollStability": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "EPFO contribution regularity, headcount retention trend"
-        },
-        "digitalFootprint": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Udyam completeness, AA linked accounts, digital payment adoption"
-        },
-        "creditBehavior": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 100,
-          "description": "For NTC, computed via NaN-aware XGBoost imputation from alt-data"
-        }
+        "taxComplianceScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "cashFlowVelocityScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "payrollStabilityScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "businessVintageScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "liquidityBufferScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "gstCompliance": { "type": "number", "minimum": 0, "maximum": 100 },
+        "cashFlowStability": { "type": "number", "minimum": 0, "maximum": 100 },
+        "payrollStability": { "type": "number", "minimum": 0, "maximum": 100 },
+        "digitalFootprint": { "type": "number", "minimum": 0, "maximum": 100 },
+        "creditBehavior": { "type": "number", "minimum": 0, "maximum": 100 }
       }
     },
-    "subScoreWeights": {
-      "type": "object",
-      "description": "Dynamic or learned weights applied to sub-scores for this prediction",
-      "properties": {
-        "gstCompliance": { "type": "number", "minimum": 0, "maximum": 1 },
-        "cashFlowStability": { "type": "number", "minimum": 0, "maximum": 1 },
-        "payrollStability": { "type": "number", "minimum": 0, "maximum": 1 },
-        "digitalFootprint": { "type": "number", "minimum": 0, "maximum": 1 },
-        "creditBehavior": { "type": "number", "minimum": 0, "maximum": 1 }
-      }
-    },
-    "shapAttributions": {
-      "type": "object",
-      "required": ["baseValue", "features"],
-      "properties": {
-        "baseValue": {
-          "type": "number",
-          "description": "Expected value (mean prediction across training dataset)"
-        },
-        "features": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["featureName", "featureValue", "shapValue"],
-            "properties": {
-              "featureName": { "type": "string" },
-              "featureValue": { "type": "number" },
-              "shapValue": {
-                "type": "number",
-                "description": "Additive SHAP contribution to the score"
-              }
-            }
-          }
-        }
-      }
+    "topReasonCodes": {
+      "type": "array"
     },
     "reasonCodes": {
-      "type": "array",
-      "description": "Plain-language explanations generated from top absolute SHAP values",
-      "items": {
-        "type": "object",
-        "required": ["code", "title", "description", "impact", "shapMagnitude"],
-        "properties": {
-          "code": { "type": "string", "pattern": "^[A-Z0-9_]+$" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "impact": { "type": "string", "enum": ["POSITIVE", "NEGATIVE", "NEUTRAL"] },
-          "shapMagnitude": { "type": "number" }
-        }
-      }
+      "type": "array"
     },
-    "confidenceInterval": {
-      "type": "object",
-      "required": ["lowerBound", "upperBound", "confidenceLevel"],
-      "properties": {
-        "lowerBound": { "type": "number", "minimum": 0, "maximum": 1000 },
-        "upperBound": { "type": "number", "minimum": 0, "maximum": 1000 },
-        "confidenceLevel": { "type": "number", "const": 0.95 }
-      }
+    "ocenEligibility": {
+      "type": "object"
+    },
+    "fraudAnalysis": {
+      "type": "object"
+    },
+    "shapReconciliation": {
+      "type": "object"
     },
     "modelVersion": {
-      "type": "string",
-      "description": "Version tag of the XGBoost/LightGBM model (e.g. xgb-2026.07.v1)"
+      "type": "string"
     },
     "dataQualityScore": {
       "type": "number",
       "minimum": 0,
-      "maximum": 100,
-      "description": "Measure of completeness and freshness of alternate data ingested"
+      "maximum": 100
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

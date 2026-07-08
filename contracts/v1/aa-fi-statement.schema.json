@@ -4,7 +4,7 @@
   "title": "Account Aggregator FI Statement (ReBIT v2.0)",
   "description": "Decrypted Financial Information statement from Account Aggregator ecosystem. Structure mirrors the ReBIT FI Data schema v2.0.0 for DEPOSIT type accounts.",
   "type": "object",
-  "required": ["statementId", "msmeId", "consentId", "account", "fetchTimestamp", "source"],
+  "required": ["account"],
   "properties": {
     "statementId": {
       "type": "string",
@@ -30,7 +30,7 @@
     },
     "account": {
       "type": "object",
-      "required": ["linkedAccRef", "maskedAccNumber", "type", "version", "summary", "transactions"],
+      "required": ["summary", "transactions"],
       "properties": {
         "linkedAccRef": {
           "type": "string",
@@ -76,12 +76,11 @@
         },
         "summary": {
           "type": "object",
-          "required": ["currentBalance", "currency", "status"],
+          "required": ["currentBalance"],
           "properties": {
             "currentBalance": {
-              "type": "string",
-              "pattern": "^-?\\d+\\.\\d{2}$",
-              "description": "Current account balance as decimal string"
+              "type": ["string", "number"],
+              "description": "Current account balance"
             },
             "currency": { "type": "string", "const": "INR" },
             "branch": { "type": "string" },
@@ -96,14 +95,14 @@
             },
             "micrCode": { "type": "string" },
             "openingDate": { "type": "string", "format": "date" },
-            "currentODLimit": { "type": "string" },
-            "drawingLimit": { "type": "string" },
+            "currentODLimit": { "type": ["string", "number"] },
+            "drawingLimit": { "type": ["string", "number"] },
             "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] }
           }
         },
         "transactions": {
           "type": "object",
-          "required": ["startDate", "endDate", "transaction"],
+          "required": ["transaction"],
           "properties": {
             "startDate": { "type": "string", "format": "date" },
             "endDate": { "type": "string", "format": "date" },
@@ -111,7 +110,7 @@
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["type", "mode", "amount", "transactionTimestamp"],
+                "required": ["type", "amount"],
                 "properties": {
                   "type": {
                     "type": "string",
@@ -123,12 +122,10 @@
                     "description": "Transaction mode per ReBIT schema"
                   },
                   "amount": {
-                    "type": "string",
-                    "pattern": "^\\d+\\.\\d{2}$"
+                    "type": ["string", "number"]
                   },
                   "currentBalance": {
-                    "type": "string",
-                    "pattern": "^-?\\d+\\.\\d{2}$"
+                    "type": ["string", "number"]
                   },
                   "transactionTimestamp": {
                     "type": "string",
@@ -163,5 +160,5 @@
       "format": "date-time"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }

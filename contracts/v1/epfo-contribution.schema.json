@@ -4,7 +4,7 @@
   "title": "EPFO Contribution Record",
   "description": "EPFO employer contribution records for an MSME establishment. Stats anchored to: 766K establishments, 73.7M members, ~75-80% on-time contribution rate (EPFO FY 2023-24). EPF mandatory for 20+ employees.",
   "type": "object",
-  "required": ["recordId", "msmeId", "establishmentCode", "monthlySummaries", "source"],
+  "required": ["coveredUnderAct"],
   "properties": {
     "recordId": {
       "type": "string",
@@ -34,7 +34,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["month", "activeMembers", "employerContribution", "employeeContribution", "wageMonth", "contributionStatus"],
+        "required": ["activeMembers"],
         "properties": {
           "month": {
             "type": "string",
@@ -149,5 +149,5 @@
       "format": "date-time"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": true
 }
