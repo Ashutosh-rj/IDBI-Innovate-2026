@@ -101,8 +101,10 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
     <div className="space-y-8 animate-fadeIn">
       {/* KPI Cards Grid with Count-Up Animations */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass-card p-6 border-l-4 border-l-idbi-cyan flex items-center justify-between">
-          <div>
+        <div className="glass-card p-6 border-l-4 border-l-idbi-cyan flex items-center justify-between relative overflow-hidden rounded-2xl shadow-xl group">
+          <div className="absolute inset-0 bg-[url('/images/bg-dark-art.jpg')] bg-cover bg-center opacity-25 group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
+          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[1px] pointer-events-none" />
+          <div className="relative z-10">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Assessed MSMEs</p>
             <h3 className="text-3xl font-extrabold text-white mt-1 font-mono">
               <AnimatedCounter end={totalMsmes} />
@@ -111,7 +113,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
               <CheckCircle2 className="w-3.5 h-3.5" /> 100% Validated against ReBIT AA & GST schemas
             </p>
           </div>
-          <div className="p-3.5 bg-idbi-cyan/10 rounded-2xl text-idbi-cyan">
+          <div className="p-3.5 bg-idbi-cyan/10 rounded-2xl text-idbi-cyan relative z-10">
             <Users className="w-7 h-7" />
           </div>
         </div>
@@ -133,8 +135,10 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
           </div>
         </div>
 
-        <div className="glass-card p-6 border-l-4 border-l-purple-500 flex items-center justify-between">
-          <div>
+        <div className="glass-card p-6 border-l-4 border-l-purple-500 flex items-center justify-between relative overflow-hidden rounded-2xl shadow-xl group">
+          <div className="absolute inset-0 bg-[url('/images/bg-abstract-dots.jpg')] bg-cover bg-center opacity-25 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
+          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[1px] pointer-events-none" />
+          <div className="relative z-10">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">NTC Thin-File Ratio</p>
             <h3 className="text-3xl font-extrabold text-purple-400 mt-1 font-mono">
               <AnimatedCounter end={ntcRatio} suffix="%" /> <span className="text-sm font-normal text-slate-400">({ntcCount} units)</span>
@@ -143,7 +147,7 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
               Scored via Alternate GST/UPI/EPFO streams
             </p>
           </div>
-          <div className="p-3.5 bg-purple-500/10 rounded-2xl text-purple-400">
+          <div className="p-3.5 bg-purple-500/10 rounded-2xl text-purple-400 relative z-10">
             <TrendingUp className="w-7 h-7" />
           </div>
         </div>

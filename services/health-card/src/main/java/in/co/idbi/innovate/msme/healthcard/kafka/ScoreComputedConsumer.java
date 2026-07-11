@@ -71,6 +71,12 @@ public class ScoreComputedConsumer {
             entity.setPublishedToOcen(true);
             entity.setOcenTransactionRef(txnRef);
 
+            if (entity.getCreditPassportId() == null || entity.getCreditPassportId().trim().isEmpty()) {
+                long seq = Math.abs(java.util.UUID.nameUUIDFromBytes(msmeId.getBytes(java.nio.charset.StandardCharsets.UTF_8)).getMostSignificantBits()) % 89999L + 10000L;
+                String candidate = String.format("CP-MH-%d-%05d", java.time.Year.now().getValue(), seq);
+                entity.setCreditPassportId(candidate);
+            }
+
             repository.save(entity);
             log.info("Successfully persisted Health Card and published to OCEN for MSME [{}]", msmeId);
         } catch (Exception e) {

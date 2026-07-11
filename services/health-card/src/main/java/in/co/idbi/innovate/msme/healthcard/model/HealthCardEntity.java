@@ -20,6 +20,9 @@ public class HealthCardEntity {
     @Column(nullable = false, unique = true, length = 64)
     private String msmeId;
 
+    @Column(unique = true, length = 64)
+    private String creditPassportId;
+
     @Column(nullable = false)
     private int healthScore;
 

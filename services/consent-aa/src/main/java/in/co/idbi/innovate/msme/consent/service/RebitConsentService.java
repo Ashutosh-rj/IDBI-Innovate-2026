@@ -135,7 +135,7 @@ public class RebitConsentService {
     public ConsentLedgerEntity initiateConsent(String msmeId, String fiuId, String aaId, String purposeCode, List<String> fiTypes) {
         log.info("Initiating ReBIT AA v2.0 consent for MSME [{}] via AA [{}] in mode [{}]", msmeId, aaId, adapterMode);
 
-        String handle = "REBIT-CH-" + UUID.randomUUID().toString().substring(0, 13).toUpperCase();
+        String handle = "CH-REBIT-" + java.time.Year.now().getValue() + "-" + UUID.randomUUID().toString().toUpperCase();
         String typesStr = String.join(",", fiTypes);
         LocalDateTime now = LocalDateTime.now();
         String statusStr = ConsentLedgerEntity.ConsentStatus.PENDING_USER_APPROVAL.name();

@@ -214,6 +214,8 @@ dist-ssr/
 .stylelintcache
 .vite/
 .cache/
+!apps/msme-pwa/public/images/*
+!apps/banker-dashboard/public/images/*
 *.tsbuildinfo
 .next/
 .nuxt/

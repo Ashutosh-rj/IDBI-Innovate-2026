@@ -1,4 +1,7 @@
 import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import click
 import pickle
@@ -228,6 +231,17 @@ def main(data: str, output: str, report: str):
                 stat = fairness_sector["disparateImpactAnalysis"][seg]["status"]
                 rf.write(f"- **{seg}**: Sample Size = {m['sampleSize']}, Mean Score = {m['meanScore']}, Default Rate = {m['defaultRate']}, Approval Rate = {m['approvalRate']:.1%}, DIR = {dir_val} ({stat})\n")
                 
+            rf.write(f"""
+## 4. Target Leakage & Synthetic Data Governance Callout (AUDIT-T0-2)
+> [!IMPORTANT]
+> **Synthetic Data Caveat & Production Transition Strategy**
+> The current baseline models ({winner_name}) and bake-off metrics reported above were generated using high-fidelity synthetic alternate datasets (`data-generators/`). While these synthetic generators enforce strict mathematical correlations and boundary conditions representing Indian MSME cash flow behaviors, synthetic evaluation metrics (AUC-ROC {winner_metrics['aucRoc']}) inherently reflect idealized statistical separability and do not capture real-world macro-shocks or informal financial noise with 100% fidelity.
+
+### Target Leakage Audit & Prevention
+- **Feature Separation**: The target variable (`is_in_default_90dpd`) and direct proxies (`past_due_days`, `recovery_flag`) are strictly excluded during the `X_train` / `X_test` feature extraction phase (`train_model.py`).
+- **Lagged Indicators Only**: Features ingested by the model are strictly historical (`lag_1m` to `lag_12m` for GST turnover, Account Aggregator balances, and EPFO active member regularity).
+- **Post-Hackathon Production Retraining Protocol**: Before active disbursement by partner banks (IDBI Bank, SBI, HDFC), this model artifact must undergo mandatory retraining on historical production loan performance datasets (`N >= 10,000` real MSME accounts across at least 2 consecutive economic cycles) under the direct supervision of the RBI Digital Lending Governance Committee.
+""")
         click.echo(f"Updated MODEL_CARD.md report at: {report_path}")
 
 if __name__ == "__main__":

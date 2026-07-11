@@ -20,15 +20,43 @@ def load_schemas() -> Dict[str, Any]:
                 schemas[fname] = json.load(f)
     return schemas
 
-def validate_record(record: Dict[str, Any], schema_name: str, schemas: Dict[str, Any]):
-    """Validates a data record against the specified JSON Schema."""
-    schema = schemas.get(schema_name)
-    if not schema:
+def load_validators(schemas: Dict[str, Any]) -> Dict[str, Any]:
+    validators = {}
+    for name, schema in schemas.items():
+        validator_cls = jsonschema.validators.validator_for(schema)
+        validators[name] = validator_cls(schema)
+    return validators
+
+def validate_record(record: Dict[str, Any], schema_name: str, validators: Dict[str, Any]):
+    """Validates a data record against the pre-compiled JSON Schema validator."""
+    validator = validators.get(schema_name)
+    if not validator:
         raise ValueError(f"Schema {schema_name} not found.")
     try:
-        validate(instance=record, schema=schema)
+        validator.validate(instance=record)
     except jsonschema.exceptions.ValidationError as e:
         raise ValueError(f"Schema validation failed for {schema_name}: {e.message}")
+
+import concurrent.futures
+
+_GLOBAL_VALIDATORS = None
+_GLOBAL_GENERATOR = None
+
+def _init_worker(schemas, base_seed):
+    global _GLOBAL_VALIDATORS, _GLOBAL_GENERATOR
+    _GLOBAL_VALIDATORS = load_validators(schemas)
+    _GLOBAL_GENERATOR = MsmeProfileGenerator(seed=base_seed)
+
+def _generate_one(seed_idx):
+    _GLOBAL_GENERATOR.reseed(seed_idx)
+    profile_data = _GLOBAL_GENERATOR.generate()
+    validate_record(profile_data["profile"], "msme-profile.schema.json", _GLOBAL_VALIDATORS)
+    for gst in profile_data["gstFilings"]:
+        validate_record(gst, "gst-filing.schema.json", _GLOBAL_VALIDATORS)
+    validate_record(profile_data["upiSummary"], "upi-transactions.schema.json", _GLOBAL_VALIDATORS)
+    validate_record(profile_data["aaStatement"], "aa-fi-statement.schema.json", _GLOBAL_VALIDATORS)
+    validate_record(profile_data["epfoRecord"], "epfo-contribution.schema.json", _GLOBAL_VALIDATORS)
+    return profile_data
 
 @click.command()
 @click.option("--count", default=10, help="Number of synthetic MSME profiles to generate.")
@@ -41,6 +69,7 @@ def main(count: int, seed: int, output: str, validate_only: bool):
     and check aggregate distribution drift against documented RBI/GSTN/NPCI statistics.
     """
     schemas = load_schemas()
+    validators = load_validators(schemas)
     click.echo(f"Loaded {len(schemas)} schemas from /contracts/v1/")
     
     if validate_only:
@@ -49,47 +78,38 @@ def main(count: int, seed: int, output: str, validate_only: bool):
             lines = f.readlines()
         for idx, line in enumerate(lines):
             data = json.loads(line)
-            validate_record(data["profile"], "msme-profile.schema.json", schemas)
+            validate_record(data["profile"], "msme-profile.schema.json", validators)
             for gst in data["gstFilings"]:
-                validate_record(gst, "gst-filing.schema.json", schemas)
-            validate_record(data["upiSummary"], "upi-transactions.schema.json", schemas)
-            validate_record(data["aaStatement"], "aa-fi-statement.schema.json", schemas)
-            validate_record(data["epfoRecord"], "epfo-contribution.schema.json", schemas)
+                validate_record(gst, "gst-filing.schema.json", validators)
+            validate_record(data["upiSummary"], "upi-transactions.schema.json", validators)
+            validate_record(data["aaStatement"], "aa-fi-statement.schema.json", validators)
+            validate_record(data["epfoRecord"], "epfo-contribution.schema.json", validators)
         click.echo(f"Successfully validated {len(lines)} records against all JSON schemas!")
         return
 
-    click.echo(f"Generating {count} synthetic profiles with seed={seed}...")
-    generator = MsmeProfileGenerator(seed=seed)
-    
+    click.echo(f"Generating {count} synthetic profiles with seed={seed} across CPU cores...")
     os.makedirs(os.path.dirname(os.path.abspath(output)), exist_ok=True)
     
     scenario_counts = {}
     default_counts = 0
     total_turnovers = []
     
+    max_workers = min(12, (os.cpu_count() or 4))
     with open(output, "w", encoding="utf-8") as f:
-        for i in range(count):
-            generator.reseed(seed + i * 10)
-            profile_data = generator.generate()
-            
-            # Strict schema validation before saving!
-            validate_record(profile_data["profile"], "msme-profile.schema.json", schemas)
-            for gst in profile_data["gstFilings"]:
-                validate_record(gst, "gst-filing.schema.json", schemas)
-            validate_record(profile_data["upiSummary"], "upi-transactions.schema.json", schemas)
-            validate_record(profile_data["aaStatement"], "aa-fi-statement.schema.json", schemas)
-            validate_record(profile_data["epfoRecord"], "epfo-contribution.schema.json", schemas)
-            
-            f.write(json.dumps(profile_data) + "\n")
-            
-            scen = profile_data["scenario"]
-            scenario_counts[scen] = scenario_counts.get(scen, 0) + 1
-            default_counts += profile_data["groundTruthLabel"]["default12m"]
-            total_turnovers.append(profile_data["profile"]["declaredTurnover"])
-            
-            if (i + 1) % 500 == 0 or (i + 1) == count:
-                click.echo(f"Generated & validated {i + 1}/{count} profiles...")
+        with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers, initializer=_init_worker, initargs=(schemas, seed)) as executor:
+            futures = [executor.submit(_generate_one, seed + i * 10) for i in range(count)]
+            for idx, future in enumerate(concurrent.futures.as_completed(futures)):
+                profile_data = future.result()
+                f.write(json.dumps(profile_data) + "\n")
                 
+                scen = profile_data["scenario"]
+                scenario_counts[scen] = scenario_counts.get(scen, 0) + 1
+                default_counts += profile_data["groundTruthLabel"]["default12m"]
+                total_turnovers.append(profile_data["profile"]["declaredTurnover"])
+                
+                if (idx + 1) % 500 == 0 or (idx + 1) == count:
+                    click.echo(f"Generated & validated {idx + 1}/{count} profiles...")
+                    
     click.echo("\n--- Generation Summary & Statistical Drift Check ---")
     click.echo(f"Total Profiles: {count}")
     for scen, cnt in scenario_counts.items():

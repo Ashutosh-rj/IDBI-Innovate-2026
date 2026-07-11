@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/registry")
@@ -39,6 +40,16 @@ public class RegistryController {
     public ResponseEntity<MsmeEntity> getById(@PathVariable String msmeId) {
         Optional<MsmeEntity> entity = verificationService.getByMsmeId(msmeId);
         return entity.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/msme/{msmeId}/udyam")
+    public ResponseEntity<Map<String, Object>> getUdyamByMsmeId(@PathVariable String msmeId) {
+        Optional<MsmeEntity> entity = verificationService.getByMsmeId(msmeId);
+        return entity.map(e -> ResponseEntity.ok(Map.<String, Object>of(
+                "msmeId", msmeId,
+                "udyamNumber", e.getUdyamNumber(),
+                "udyamVerified", e.isUdyamVerified()
+        ))).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @Data

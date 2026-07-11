@@ -55,6 +55,9 @@ export async function fetchLiveCohort(baseProfiles: MsmeProfile[]): Promise<Msme
   const promises = baseProfiles.map(async (baseProfile) => {
     const payload = buildScoringPayload(baseProfile);
     let apiResp = null;
+    let udyamNumber: string | undefined;
+    let creditPassportId: string | undefined;
+    let isError = false;
 
     try {
       // Try Gateway first (:8080)
@@ -66,14 +69,46 @@ export async function fetchLiveCohort(baseProfiles: MsmeProfile[]): Promise<Msme
         const resDirect = await axios.post(`${DIRECT_SCORING_URL}/score/`, payload, { timeout: 2500 });
         apiResp = resDirect.data;
       } catch (directErr) {
-        console.warn(`Live inference failed for ${baseProfile.msmeId}. Using base profile.`);
+        console.warn(`Live inference failed for ${baseProfile.msmeId}. Using base profile with explicit backend unreachable state.`);
+        isError = true;
       }
     }
 
+    try {
+      const udyamRes = await axios.get(`${GATEWAY_URL}/registry/msme/${baseProfile.msmeId}/udyam`, { timeout: 2000 }).catch(
+        () => axios.get(`http://localhost:8083/api/v1/registry/msme/${baseProfile.msmeId}/udyam`, { timeout: 2000 })
+      );
+      if (udyamRes?.data?.udyamNumber) {
+        udyamNumber = udyamRes.data.udyamNumber;
+      }
+    } catch (e) {
+      isError = true;
+    }
+
+    try {
+      const passportRes = await axios.get(`${GATEWAY_URL}/health-card/${baseProfile.msmeId}/passport`, { timeout: 2000 }).catch(
+        () => axios.get(`http://localhost:8084/api/v1/health-card/${baseProfile.msmeId}/passport`, { timeout: 2000 })
+      );
+      if (passportRes?.data?.creditPassportId) {
+        creditPassportId = passportRes.data.creditPassportId;
+      }
+    } catch (e) {
+      isError = true;
+    }
+
     if (apiResp) {
-      return transformScoringResponse(apiResp, baseProfile);
+      return transformScoringResponse(apiResp, baseProfile, { udyamNumber, creditPassportId, isError });
     } else {
-      return baseProfile;
+      const fallbackUdyam = udyamNumber || "ID unavailable — backend unreachable";
+      const fallbackPassport = creditPassportId || "ID unavailable — backend unreachable";
+      return {
+        ...baseProfile,
+        udyamNumber: fallbackUdyam,
+        ocenLspPayload: baseProfile.ocenLspPayload ? {
+          ...baseProfile.ocenLspPayload,
+          creditPassportId: fallbackPassport
+        } : undefined
+      };
     }
   });
 

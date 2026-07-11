@@ -24,8 +24,12 @@ export const Header: React.FC<HeaderProps> = ({
   dataSource
 }) => {
   return (
-    <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 space-y-2.5">
-      <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 space-y-2.5 relative overflow-hidden shadow-lg">
+      {/* Unique Dark Art Header Background Texture */}
+      <div className="absolute inset-0 bg-[url('/images/bg-dark-art.jpg')] bg-cover bg-top opacity-20 pointer-events-none" />
+      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[2px] pointer-events-none" />
+      
+      <div className="max-w-md mx-auto flex items-center justify-between gap-3 relative z-10">
         {/* Brand */}
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-idbi-blue to-idbi-cyan flex items-center justify-center shadow-md shadow-idbi-cyan/20">
@@ -61,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Live API and Judge Demo Controls Bar */}
-      <div className="max-w-md mx-auto flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60 text-[10px]">
+      <div className="max-w-md mx-auto flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60 text-[10px] relative z-10">
         <button
           onClick={() => setIsLiveApi(!isLiveApi)}
           className={`px-2 py-1 rounded-lg font-bold border flex items-center gap-1.5 transition-all ${

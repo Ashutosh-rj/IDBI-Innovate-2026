@@ -91,22 +91,81 @@ export async function fetchLiveMsmeScore(
   }
 
   const payload = buildScoringPayload(baseProfile);
+  let udyamNumber: string | undefined;
+  let creditPassportId: string | undefined;
+  let isError = false;
+
+  try {
+    const udyamRes = await axios.get(`${GATEWAY_URL}/registry/msme/${baseProfile.msmeId}/udyam`, { timeout: 2000 }).catch(
+      () => axios.get(`http://localhost:8083/api/v1/registry/msme/${baseProfile.msmeId}/udyam`, { timeout: 2000 })
+    );
+    if (udyamRes?.data?.udyamNumber) {
+      udyamNumber = udyamRes.data.udyamNumber;
+    }
+  } catch (e) {
+    isError = true;
+  }
+
+  try {
+    const passportRes = await axios.get(`${GATEWAY_URL}/health-card/${baseProfile.msmeId}/passport`, { timeout: 2000 }).catch(
+      () => axios.get(`http://localhost:8084/api/v1/health-card/${baseProfile.msmeId}/passport`, { timeout: 2000 })
+    );
+    if (passportRes?.data?.creditPassportId) {
+      creditPassportId = passportRes.data.creditPassportId;
+    }
+  } catch (e) {
+    isError = true;
+  }
 
   try {
     const res = await axios.post(`${GATEWAY_URL}/score/`, payload, { timeout: 2500 });
     if (res.data) {
-      return { profile: transformResponse(res.data, baseProfile), source: 'GATEWAY_8080' };
+      const transformed = transformResponse(res.data, baseProfile);
+      return {
+        profile: {
+          ...transformed,
+          udyamNumber: udyamNumber || transformed.udyamNumber || (isError ? "ID unavailable — backend unreachable" : "UDYAM-UNVERIFIED"),
+          ocenLspPayload: transformed.ocenLspPayload ? {
+            ...transformed.ocenLspPayload,
+            creditPassportId: creditPassportId || transformed.ocenLspPayload.creditPassportId || (isError ? "ID unavailable — backend unreachable" : "CP-UNVERIFIED")
+          } : undefined
+        },
+        source: 'GATEWAY_8080'
+      };
     }
   } catch (gatewayErr) {
     try {
       const resDirect = await axios.post(`${DIRECT_SCORING_URL}/score/`, payload, { timeout: 2500 });
       if (resDirect.data) {
-        return { profile: transformResponse(resDirect.data, baseProfile), source: 'DIRECT_8000' };
+        const transformed = transformResponse(resDirect.data, baseProfile);
+        return {
+          profile: {
+            ...transformed,
+            udyamNumber: udyamNumber || transformed.udyamNumber || (isError ? "ID unavailable — backend unreachable" : "UDYAM-UNVERIFIED"),
+            ocenLspPayload: transformed.ocenLspPayload ? {
+              ...transformed.ocenLspPayload,
+              creditPassportId: creditPassportId || transformed.ocenLspPayload.creditPassportId || (isError ? "ID unavailable — backend unreachable" : "CP-UNVERIFIED")
+            } : undefined
+          },
+          source: 'DIRECT_8000'
+        };
       }
     } catch (directErr) {
       if (isJudgeDemo) {
         console.warn('Judge Demo Mode: Live backend endpoints unreachable. Engaging automatic demo fallback.');
-        return { profile: baseProfile, source: 'JUDGE_FALLBACK' };
+        const fallbackUdyam = udyamNumber || "ID unavailable — backend unreachable";
+        const fallbackPassport = creditPassportId || "ID unavailable — backend unreachable";
+        return {
+          profile: {
+            ...baseProfile,
+            udyamNumber: fallbackUdyam,
+            ocenLspPayload: baseProfile.ocenLspPayload ? {
+              ...baseProfile.ocenLspPayload,
+              creditPassportId: fallbackPassport
+            } : undefined
+          },
+          source: 'JUDGE_FALLBACK'
+        };
       }
       throw new Error('Unable to connect to live API Gateway (:8080) or Direct ML Engine (:8000).');
     }

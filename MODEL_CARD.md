@@ -1,38 +1,38 @@
 # IDBI Innovate 2026: AI Credit Scoring Model Card
 
 ## 1. Model Overview & Bake-Off Results
-- **Winning Model**: XGBoost 2.1
-- **Evaluation Cohort Size**: 200 records (160 training, 40 testing)
-- **AUC-ROC**: 0.8611
-- **KS-Statistic**: 0.6111
-- **Brier Score Loss**: 0.0729
+- **Winning Model**: LightGBM 4.3
+- **Evaluation Cohort Size**: 10000 records (8000 training, 2000 testing)
+- **AUC-ROC**: 0.8461
+- **KS-Statistic**: 0.599
+- **Brier Score Loss**: 0.0654
 
 ## 2. TreeSHAP Local Accuracy Reconciliation (Rule 1 & 8)
 - **Reconciliation Status**: PASSED
-- **Max Discrepancy**: 1e-06 (Tolerance: 0.05)
-- **Tested Samples**: 40
+- **Max Discrepancy**: 0.0 (Tolerance: 0.05)
+- **Tested Samples**: 500
 
 ## 3. Algorithmic Fairness Evaluation Across Cohort Segments (AUDIT-T2-3)
 ### MSME Category Parity (Reference: MEDIUM)
 - **Overall Fairness Passed**: True
-- **MEDIUM**: Sample Size = 1, Mean Score = 897.0, Default Rate = 0.0, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
-- **MICRO**: Sample Size = 32, Mean Score = 861.94, Default Rate = 0.125, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
-- **SMALL**: Sample Size = 7, Mean Score = 889.43, Default Rate = 0.0, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
+- **MEDIUM**: Sample Size = 189, Mean Score = 850.29, Default Rate = 0.1111, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
+- **MICRO**: Sample Size = 1415, Mean Score = 853.81, Default Rate = 0.0763, Approval Rate = 98.0%, DIR = 0.9802 (PASS (Fair))
+- **SMALL**: Sample Size = 396, Mean Score = 836.57, Default Rate = 0.1212, Approval Rate = 97.5%, DIR = 0.9747 (PASS (Fair))
 
 ### NTC Thin-File Parity (Reference: ESTABLISHED)
 - **Overall Fairness Passed**: True
-- **ESTABLISHED**: Sample Size = 32, Mean Score = 863.78, Default Rate = 0.125, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
-- **NTC_THIN_FILE**: Sample Size = 8, Mean Score = 883.0, Default Rate = 0.0, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
+- **ESTABLISHED**: Sample Size = 1604, Mean Score = 840.48, Default Rate = 0.1072, Approval Rate = 97.6%, DIR = 1.0 (PASS (Fair))
+- **NTC_THIN_FILE**: Sample Size = 396, Mean Score = 888.87, Default Rate = 0.0126, Approval Rate = 100.0%, DIR = 1.0243 (PASS (Fair))
 
 ### Sector Parity (Reference: MANUFACTURING)
 - **Overall Fairness Passed**: True
-- **MANUFACTURING**: Sample Size = 18, Mean Score = 875.28, Default Rate = 0.1111, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
-- **SERVICES**: Sample Size = 22, Mean Score = 861.36, Default Rate = 0.0909, Approval Rate = 100.0%, DIR = 1.0 (PASS (Fair))
+- **MANUFACTURING**: Sample Size = 895, Mean Score = 853.05, Default Rate = 0.0827, Approval Rate = 98.8%, DIR = 1.0 (PASS (Fair))
+- **SERVICES**: Sample Size = 1105, Mean Score = 847.65, Default Rate = 0.0932, Approval Rate = 97.6%, DIR = 0.9877 (PASS (Fair))
 
 ## 4. Target Leakage & Synthetic Data Governance Callout (AUDIT-T0-2)
 > [!IMPORTANT]
 > **Synthetic Data Caveat & Production Transition Strategy**
-> The current baseline models (XGBoost 2.1 & LightGBM) and bake-off metrics reported above were generated using high-fidelity synthetic alternate datasets (`data-generators/`). While these synthetic generators enforce strict mathematical correlations and boundary conditions representing Indian MSME cash flow behaviors, synthetic evaluation metrics (AUC-ROC 0.8611) inherently reflect idealized statistical separability and do not capture real-world macro-shocks or informal financial noise with 100% fidelity.
+> The current baseline models (LightGBM 4.3) and bake-off metrics reported above were generated using high-fidelity synthetic alternate datasets (`data-generators/`). While these synthetic generators enforce strict mathematical correlations and boundary conditions representing Indian MSME cash flow behaviors, synthetic evaluation metrics (AUC-ROC 0.8461) inherently reflect idealized statistical separability and do not capture real-world macro-shocks or informal financial noise with 100% fidelity.
 
 ### Target Leakage Audit & Prevention
 - **Feature Separation**: The target variable (`is_in_default_90dpd`) and direct proxies (`past_due_days`, `recovery_flag`) are strictly excluded during the `X_train` / `X_test` feature extraction phase (`train_model.py`).

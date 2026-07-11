@@ -38,6 +38,12 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting MSME ML Scoring Engine...", version=settings.VERSION, mode=settings.ADAPTER_MODE)
+    if settings.REDIS_PASSWORD in ["msme_redis_secret", "password", "admin", "secret"] or not settings.REDIS_PASSWORD:
+        if settings.ENVIRONMENT.lower() == "production":
+            logger.error("FATAL: Default or missing REDIS_PASSWORD detected in production environment!")
+            raise RuntimeError("CRITICAL SECURITY ERROR: Default REDIS_PASSWORD forbidden in production environment per AUDIT-T0-3.")
+        else:
+            logger.warning("SECURITY WARNING: Using default or insecure REDIS_PASSWORD. Do not use in production!")
     asyncio.create_task(run_kafka_consumer_loop())
 
 @app.on_event("shutdown")

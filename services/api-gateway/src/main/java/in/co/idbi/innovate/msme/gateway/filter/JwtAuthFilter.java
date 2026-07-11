@@ -38,6 +38,17 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             log.error("FATAL: JWT secret is missing or less than 32 characters (256 bits). Refusing to start (AUDIT-T0-2).");
             throw new IllegalStateException("FATAL: JWT secret is missing or insecure. Minimum 256 bits required.");
         }
+        boolean isProd = Arrays.asList(env.getActiveProfiles()).contains("production") ||
+                         "production".equalsIgnoreCase(env.getProperty("spring.profiles.active")) ||
+                         "production".equalsIgnoreCase(env.getProperty("ENVIRONMENT", ""));
+        if ("idbi_innovate_2026_super_secret_jwt_signing_key_at_least_256_bits".equals(jwtSecret)) {
+            if (isProd) {
+                log.error("FATAL: Default JWT secret detected in production environment! Refusing to start (AUDIT-T0-3).");
+                throw new IllegalStateException("FATAL: Default JWT secret detected in production environment per AUDIT-T0-3.");
+            } else {
+                log.warn("SECURITY WARNING: Using default JWT secret. Do not use in production environment!");
+            }
+        }
     }
 
     private static final List<String> OPEN_ENDPOINTS = List.of(

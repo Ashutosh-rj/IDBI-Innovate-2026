@@ -67,10 +67,17 @@ function deriveKeyMetrics(apiResp: any, fallback?: Partial<MsmeProfile>): MsmePr
 /**
  * Transforms a raw API Gateway / Scoring Engine response into an exact MsmeProfile for UI rendering.
  */
-export function transformScoringResponse(apiResp: any, baseProfile?: MsmeProfile): MsmeProfile {
+export function transformScoringResponse(
+  apiResp: any,
+  baseProfile?: MsmeProfile,
+  backendIds?: { udyamNumber?: string; creditPassportId?: string; isError?: boolean }
+): MsmeProfile {
+  const resolvedUdyam = backendIds?.udyamNumber || apiResp.udyamNumber || baseProfile?.udyamNumber || (backendIds?.isError ? "ID unavailable — backend unreachable" : "UDYAM-UNVERIFIED");
+  const resolvedPassport = backendIds?.creditPassportId || apiResp.creditPassportId || baseProfile?.ocenLspPayload?.creditPassportId || (backendIds?.isError ? "ID unavailable — backend unreachable" : "CP-UNVERIFIED");
+
   return {
     msmeId: apiResp.msmeId || baseProfile?.msmeId || "MSME-UNKNOWN",
-    udyamNumber: baseProfile?.udyamNumber || `UDYAM-MH-${Math.floor(10 + Math.random() * 89)}-${Math.floor(1000000 + Math.random() * 8999999)}`,
+    udyamNumber: resolvedUdyam,
     businessName: baseProfile?.businessName || `Enterprise Profile ${apiResp.msmeId || ''}`,
     category: baseProfile?.category || "SMALL",
     sector: baseProfile?.sector || "MANUFACTURING",
@@ -83,7 +90,7 @@ export function transformScoringResponse(apiResp: any, baseProfile?: MsmeProfile
     topReasonCodes: mapReasonCodes(apiResp.topReasonCodes || baseProfile?.topReasonCodes),
     ocenLspPayload: apiResp.ocenEligibility ? {
       lspId: "LSP-IDBI-INNOVATE-LIVE",
-      creditPassportId: `CP-MH-2026-${Math.floor(10000 + Math.random() * 89999)}`,
+      creditPassportId: resolvedPassport,
       timestamp: new Date().toISOString(),
       verificationStatus: apiResp.ocenEligibility.isEligible ? "VERIFIED_ELIGIBLE" : "INELIGIBLE_RISK"
     } : baseProfile?.ocenLspPayload,

@@ -2,6 +2,9 @@
 FROM python:3.11-slim
 WORKDIR /app
 
+# Install system dependencies required for LightGBM OpenMP support (libgomp.so.1)
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
+
 # Copy requirements first to leverage Docker layer caching when application code changes
 COPY data-generators/sgsdg/requirements.txt /app/data-generators/sgsdg/requirements.txt
 COPY services/scoring-engine/requirements.txt /app/services/scoring-engine/requirements.txt

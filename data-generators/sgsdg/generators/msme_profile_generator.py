@@ -19,6 +19,10 @@ class MsmeProfileGenerator(BaseGenerator):
         self.upi_gen = UpiGenerator(seed)
         self.aa_gen = AaGenerator(seed)
         self.epfo_gen = EpfoGenerator(seed)
+        self.company_pool = [f"Company_{i}_Enterprise" for i in range(200)]
+        self.street_pool = [f"Plot_{i}, Industrial Estate, MIDC" for i in range(100)]
+        self.pan_letters = ["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY"]
+        self.pan_end = ["A", "B", "C", "D", "E", "Z"]
 
     def reseed(self, seed: int):
         super().reseed(seed)
@@ -47,10 +51,11 @@ class MsmeProfileGenerator(BaseGenerator):
         
         # Identifiers
         state_code = f"{self.rng.integers(1, 35):02d}"
-        pan = f"{self.faker.lexify('?????')}{self.rng.integers(1000, 9999)}{self.faker.lexify('?')}".upper()
-        gstin = f"{state_code}{pan}1Z{self.faker.lexify('?')}".upper()
+        pan = f"{self.rng.choice(self.pan_letters)}{self.rng.integers(1000, 9999)}{self.rng.choice(self.pan_end)}"
+        gstin = f"{state_code}{pan}1Z{self.rng.choice(['A', 'B', 'Z'])}"
         udyam = f"UDYAM-MH-{self.rng.integers(10, 99)}-{self.rng.integers(1000000, 9999999)}"
-        vpa = f"{self.faker.company().lower().replace(' ', '').replace(',', '')}@idbi"
+        cname = self.rng.choice(self.company_pool)
+        vpa = f"{cname.lower().replace('_', '')}@idbi"
         est_code = f"MH/BAN/{self.rng.integers(10000, 99999)}/000"
         acc_ref = f"REF-{uuid.uuid4().hex[:10].upper()}"
         consent_id = str(uuid.uuid4())
@@ -65,15 +70,15 @@ class MsmeProfileGenerator(BaseGenerator):
         profile = {
             "msmeId": msme_id,
             "udyamNumber": udyam,
-            "businessName": self.faker.company(),
-            "legalName": self.faker.company() + " Pvt Ltd",
+            "businessName": cname,
+            "legalName": cname + " Pvt Ltd",
             "category": category,
             "sector": self.rng.choice(["MANUFACTURING", "SERVICES"], p=[0.45, 0.55]),
             "gstin": gstin,
             "pan": pan,
             "registrationDate": start_date.isoformat(),
             "address": {
-                "line1": self.faker.street_address(),
+                "line1": self.rng.choice(self.street_pool),
                 "city": "Mumbai",
                 "district": "Mumbai City",
                 "state": "Maharashtra",
@@ -90,7 +95,7 @@ class MsmeProfileGenerator(BaseGenerator):
                     "maskedAccNumber": aa_statement["account"]["maskedAccNumber"]
                 }
             ],
-            "contactEmail": self.faker.company_email(),
+            "contactEmail": f"info@{cname.lower().replace('_', '')}.in",
             "contactMobile": f"9{self.rng.integers(100000000, 999999999)}",
             "numberOfEmployees": epfo_record["monthlySummaries"][-1]["activeMembers"],
             "epfoEstablishmentCode": est_code,

@@ -9,6 +9,13 @@ class AaGenerator(BaseGenerator):
     Generates synthetic Account Aggregator FI statements compliant with aa-fi-statement.schema.json.
     Mirrors ReBIT FI Data schema v2.0.0 for DEPOSIT / CURRENT accounts.
     """
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.bban_pool = [f"{self.rng.integers(1000000000, 9999999999)}" for _ in range(100)]
+        self.company_pool = [f"Company_{i}_Pvt_Ltd" for i in range(100)]
+        self.modes = ["UPI", "NEFT", "RTGS", "IMPS"]
+        self.mode_probs = [0.55, 0.25, 0.15, 0.05]
+
     def generate(self, msme_id: str, consent_id: str, category: str, scenario: str, account_ref: str, start_date: date, history_months: int = 24) -> Dict[str, Any]:
         scenario_config = self.config["scenarios"].get(scenario, self.config["scenarios"]["HEALTHY_ESTABLISHED"])
         
@@ -43,18 +50,18 @@ class AaGenerator(BaseGenerator):
             if self.rng.random() < 0.7:
                 # 60% credit, 40% debit
                 is_credit = self.rng.random() < 0.6
-                mode = self.rng.choice(["UPI", "NEFT", "RTGS", "IMPS"], p=[0.55, 0.25, 0.15, 0.05])
+                mode = self.rng.choice(self.modes, p=self.mode_probs)
                 
                 if is_credit:
                     amt = round(float(self.rng.lognormal(8.0, 1.2)), 2) # Average ~3000-8000
                     running_bal += amt
                     txn_type = "CREDIT"
-                    narration = f"{mode}/CR/{self.faker.bban()}/{self.faker.company()}"
+                    narration = f"{mode}/CR/{self.rng.choice(self.bban_pool)}/{self.rng.choice(self.company_pool)}"
                 else:
                     amt = round(float(self.rng.lognormal(8.2, 1.1)), 2)
                     running_bal = max(0.0, running_bal - amt)
                     txn_type = "DEBIT"
-                    narration = f"{mode}/DR/{self.faker.bban()}/Supplier Payment"
+                    narration = f"{mode}/DR/{self.rng.choice(self.bban_pool)}/Supplier Payment"
                     
                 txn_record = {
                     "type": txn_type,
@@ -86,11 +93,11 @@ class AaGenerator(BaseGenerator):
                         "type": "SINGLE",
                         "holder": [
                             {
-                                "name": self.faker.company(),
+                                "name": self.rng.choice(self.company_pool),
                                 "dob": "1985-06-15",
                                 "mobile": f"9{self.rng.integers(100000000, 999999999)}",
-                                "pan": f"{self.faker.lexify('?????')}{self.rng.integers(1000, 9999)}{self.faker.lexify('?')}".upper(),
-                                "email": self.faker.company_email(),
+                                "pan": f"{self.rng.choice(['ABCDE', 'FGHIJ', 'KLMNO'])}{self.rng.integers(1000, 9999)}{self.rng.choice(['A', 'B', 'C', 'Z'])}",
+                                "email": f"contact@{self.rng.choice(self.company_pool).lower().replace('_', '')}.in",
                                 "nominee": "REGISTERED"
                             }
                         ]

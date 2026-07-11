@@ -46,28 +46,30 @@ class UpiGenerator(BaseGenerator):
             debit_count = 0
             below_500_count = 0
             
-            # Simulate transactions across the month
-            for day_idx, daily_count in enumerate(daily_txns):
-                # 80% incoming (credits from customers), 20% outgoing (debits to suppliers/utility)
-                cr_cnt = int(daily_count * 0.8)
-                db_cnt = daily_count - cr_cnt
+            # Simulate transactions across the month at once for speed
+            total_daily_sum = int(np.sum(daily_txns))
+            cr_cnt = int(total_daily_sum * 0.8)
+            db_cnt = total_daily_sum - cr_cnt
+            
+            if cr_cnt > 0:
+                rand_weights = self.rng.random(size=cr_cnt)
+                comp1_mask = rand_weights < mix_config["comp1_small_retail"]["weight"]
+                comp1_count = int(np.sum(comp1_mask))
+                comp2_count = cr_cnt - comp1_count
                 
-                # Sample incoming ticket sizes from mixture
-                for _ in range(cr_cnt):
-                    if self.rng.random() < mix_config["comp1_small_retail"]["weight"]:
-                        amt = self.rng.lognormal(mix_config["comp1_small_retail"]["lognorm_mu"], mix_config["comp1_small_retail"]["lognorm_sigma"])
-                        if amt < 500.0:
-                            below_500_count += 1
-                    else:
-                        amt = self.rng.lognormal(mix_config["comp2_b2b_large"]["lognorm_mu"], mix_config["comp2_b2b_large"]["lognorm_sigma"])
-                    total_credits += float(amt)
-                    credit_count += 1
-                    
-                # Sample outgoing debits (typically larger supplier payments)
-                for _ in range(db_cnt):
-                    amt = self.rng.lognormal(mix_config["comp2_b2b_large"]["lognorm_mu"] + 0.5, mix_config["comp2_b2b_large"]["lognorm_sigma"])
-                    total_debits += float(amt)
-                    debit_count += 1
+                if comp1_count > 0:
+                    comp1_amts = self.rng.lognormal(mix_config["comp1_small_retail"]["lognorm_mu"], mix_config["comp1_small_retail"]["lognorm_sigma"], size=comp1_count)
+                    below_500_count = int(np.sum(comp1_amts < 500.0))
+                    total_credits = float(np.sum(comp1_amts))
+                if comp2_count > 0:
+                    comp2_amts = self.rng.lognormal(mix_config["comp2_b2b_large"]["lognorm_mu"], mix_config["comp2_b2b_large"]["lognorm_sigma"], size=comp2_count)
+                    total_credits += float(np.sum(comp2_amts))
+                credit_count = cr_cnt
+                
+            if db_cnt > 0:
+                db_amts = self.rng.lognormal(mix_config["comp2_b2b_large"]["lognorm_mu"] + 0.5, mix_config["comp2_b2b_large"]["lognorm_sigma"], size=db_cnt)
+                total_debits = float(np.sum(db_amts))
+                debit_count = db_cnt
                     
             peak_day = int(np.max(daily_txns))
             low_day = int(np.min(daily_txns))

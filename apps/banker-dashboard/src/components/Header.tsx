@@ -21,8 +21,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isLiveA
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 relative overflow-hidden shadow-xl">
+      {/* Unique Dark Art Background Backdrop for Banker Portal */}
+      <div className="absolute inset-0 bg-[url('/images/bg-dark-art.jpg')] bg-cover bg-top opacity-20 pointer-events-none" />
+      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[2px] pointer-events-none" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex items-center justify-between h-20">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3 lg:gap-4">

@@ -14,29 +14,93 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
   const [selectedBank, setSelectedBank] = useState('HDFC Bank Ltd (DEPOSIT)');
   const [purpose, setPurpose] = useState('101 - CREDIT_SCORE_ASSESSMENT');
   const [actionFeedback, setActionFeedback] = useState<{ message: string; type: 'grant' | 'revoke' } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCreateConsent = (e: React.FormEvent) => {
+  const handleCreateConsent = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newHandle = `CH-REBIT-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+    setIsLoading(true);
     const fiType = selectedBank.includes('DEPOSIT') ? 'DEPOSIT' : 'GST_RETURNS';
-    
+    const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8080/api/v1';
+
+    let newHandle: string;
+    let status = "ACTIVE";
+    let isError = false;
+
+    try {
+      const initRes = await fetch(`${GATEWAY_URL}/consent/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          msmeId: "MSME-888",
+          fiuId: "FIU-IDBI-BANK-INNOVATE",
+          aaId: "AA-ONEMONEY-001",
+          purposeCode: purpose,
+          fiTypes: [fiType, "TERM_DEPOSIT"]
+        })
+      }).catch(() =>
+        fetch(`http://localhost:8081/api/v1/consent/initiate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            msmeId: "MSME-888",
+            fiuId: "FIU-IDBI-BANK-INNOVATE",
+            aaId: "AA-ONEMONEY-001",
+            purposeCode: purpose,
+            fiTypes: [fiType, "TERM_DEPOSIT"]
+          })
+        })
+      );
+
+      if (initRes && initRes.ok) {
+        const initData = await initRes.json();
+        newHandle = initData.consentHandle;
+
+        const approveRes = await fetch(`${GATEWAY_URL}/consent/approve/${newHandle}`, { method: 'POST' }).catch(() =>
+          fetch(`http://localhost:8081/api/v1/consent/approve/${newHandle}`, { method: 'POST' })
+        );
+        if (approveRes && approveRes.ok) {
+          const approveData = await approveRes.json();
+          status = approveData.status || "ACTIVE";
+        }
+      } else {
+        throw new Error("Backend response not OK");
+      }
+    } catch (err) {
+      newHandle = "ID unavailable — backend unreachable";
+      status = "ERROR";
+      isError = true;
+    }
+
+    setIsLoading(false);
     const record: ConsentRecord = {
       consentHandle: newHandle,
       fiuId: "FIU-IDBI-BANK-INNOVATE",
       aaId: "AA-ONEMONEY-001",
       purposeCode: purpose,
       fiTypes: [fiType, "TERM_DEPOSIT"],
-      status: "ACTIVE",
+      status: isError ? "REVOKED" : (status as any),
       consentStart: new Date().toISOString(),
       consentExpiry: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString()
     };
 
     onGrantConsent(record);
     setShowModal(false);
-    setActionFeedback({ message: `ReBIT AA Consent (${newHandle}) granted & active with ${selectedBank}!`, type: 'grant' });
+    if (isError) {
+      setActionFeedback({ message: `Consent initiation failed: ID unavailable — backend unreachable.`, type: 'revoke' });
+    } else {
+      setActionFeedback({ message: `ReBIT AA Consent (${newHandle}) granted & active with ${selectedBank}!`, type: 'grant' });
+    }
   };
 
-  const handleRevoke = (handle: string) => {
+  const handleRevoke = async (handle: string) => {
+    const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8080/api/v1';
+    try {
+      await fetch(`${GATEWAY_URL}/consent/revoke/${handle}`, { method: 'POST' }).catch(() =>
+        fetch(`http://localhost:8081/api/v1/consent/revoke/${handle}`, { method: 'POST' })
+      );
+    } catch (e) {
+      console.warn('Backend revoke unreachable:', e);
+    }
     onRevokeConsent(handle);
     setActionFeedback({ message: `Consent (${handle}) immediately revoked. Data stream terminated under DPDP Act 2023.`, type: 'revoke' });
   };
@@ -69,21 +133,25 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
         </div>
       )}
 
-      {/* Header */}
-      <div className="glass-card p-5 border-l-4 border-l-purple-500">
-        <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-purple-400" />
-          Account Aggregator (AA) Consents
-        </h3>
-        <p className="text-xs text-slate-300 mt-1">
-          You are in complete control of your financial data. Data is shared encrypted end-to-end under RBI Account Aggregator guidelines.
-        </p>
+      {/* Header with Unique Abstract Dots Art */}
+      <div className="glass-card p-5 border-l-4 border-l-purple-500 relative overflow-hidden rounded-3xl shadow-xl group">
+        <div className="absolute inset-0 bg-[url('/images/bg-abstract-dots.jpg')] bg-cover bg-center opacity-25 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-purple-950/80 to-slate-950/90 backdrop-blur-sm pointer-events-none" />
+        <div className="relative z-10">
+          <h3 className="text-lg font-extrabold text-white flex items-center gap-2 group-hover:text-purple-300 transition-colors">
+            <ShieldCheck className="w-5 h-5 text-purple-400" />
+            Account Aggregator (AA) Consents
+          </h3>
+          <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+            You are in complete control of your financial data. Data is shared encrypted end-to-end under RBI Account Aggregator guidelines.
+          </p>
+        </div>
       </div>
 
       {/* Grant Consent CTA */}
       <button
         onClick={() => setShowModal(true)}
-        className="btn-primary py-3.5 bg-gradient-to-r from-purple-600 to-idbi-blue shadow-purple-500/20"
+        className="btn-primary py-3.5 bg-gradient-to-r from-purple-600 to-idbi-blue shadow-purple-500/20 hover:scale-[1.02] transition-transform"
       >
         <PlusCircle className="w-5 h-5" /> Grant New Data Sharing Consent
       </button>
@@ -95,47 +163,51 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
         </h4>
 
         {consents.map((c) => (
-          <div key={c.consentHandle} className="glass-card p-5 space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                    c.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-                    c.status === 'REVOKED' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
-                    'bg-slate-800 text-slate-400'
-                  }`}>
-                    {c.status}
-                  </span>
-                  <span className="text-xs font-mono font-bold text-white">{c.consentHandle}</span>
+          <div key={c.consentHandle} className="glass-card p-5 relative overflow-hidden rounded-2xl group hover:border-purple-500/40 transition-all">
+            <div className="absolute inset-0 bg-[url('/images/bg-abstract-dots.jpg')] bg-cover bg-center opacity-15 mix-blend-luminosity group-hover:opacity-25 transition-opacity pointer-events-none" />
+            <div className="absolute inset-0 bg-slate-950/90 pointer-events-none" />
+            <div className="relative z-10 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                      c.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                      c.status === 'REVOKED' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                      'bg-slate-800 text-slate-400'
+                    }`}>
+                      {c.status}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-white">{c.consentHandle}</span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1.5">
+                    <strong>FIU:</strong> {c.fiuId} • <strong>AA:</strong> {c.aaId}
+                  </p>
                 </div>
-                <p className="text-xs text-slate-300 mt-1.5">
-                  <strong>FIU:</strong> {c.fiuId} • <strong>AA:</strong> {c.aaId}
-                </p>
+
+                {c.status === 'ACTIVE' && (
+                  <button
+                    onClick={() => handleRevoke(c.consentHandle)}
+                    className="px-2.5 py-1 bg-rose-500/15 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-semibold border border-rose-500/30 transition-all flex items-center gap-1 shrink-0"
+                    title="Revoke consent immediately"
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Revoke
+                  </button>
+                )}
               </div>
 
-              {c.status === 'ACTIVE' && (
-                <button
-                  onClick={() => handleRevoke(c.consentHandle)}
-                  className="px-2.5 py-1 bg-rose-500/15 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-semibold border border-rose-500/30 transition-all flex items-center gap-1 shrink-0"
-                  title="Revoke consent immediately"
-                >
-                  <XCircle className="w-3.5 h-3.5" /> Revoke
-                </button>
-              )}
-            </div>
-
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-1.5 text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>Purpose:</span>
-                <strong className="text-slate-200">{c.purposeCode}</strong>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Data Types:</span>
-                <strong className="text-idbi-cyan font-mono">{c.fiTypes.join(', ')}</strong>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Valid Until:</span>
-                <strong className="text-slate-300">{new Date(c.consentExpiry).toLocaleDateString()}</strong>
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-1.5 text-xs">
+                <div className="flex justify-between text-slate-400">
+                  <span>Purpose:</span>
+                  <strong className="text-slate-200">{c.purposeCode}</strong>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Data Types:</span>
+                  <strong className="text-idbi-cyan font-mono">{c.fiTypes.join(', ')}</strong>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Valid Until:</span>
+                  <strong className="text-slate-300">{new Date(c.consentExpiry).toLocaleDateString()}</strong>
+                </div>
               </div>
             </div>
           </div>
@@ -208,9 +280,10 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary py-2.5 flex-1 text-xs bg-gradient-to-r from-purple-600 to-idbi-blue"
+                  disabled={isLoading}
+                  className="btn-primary py-2.5 flex-1 text-xs bg-gradient-to-r from-purple-600 to-idbi-blue disabled:opacity-50"
                 >
-                  Authorize Consent &rarr;
+                  {isLoading ? 'Authorizing...' : 'Authorize Consent →'}
                 </button>
               </div>
             </form>

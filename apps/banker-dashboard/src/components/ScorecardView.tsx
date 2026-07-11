@@ -47,9 +47,12 @@ export const ScorecardView: React.FC<ScorecardViewProps> = ({ msme, onBack, onSi
         </div>
       </div>
 
-      {/* Header Profile Summary */}
-      <div className="glass-card p-8 border-t-4 border-t-idbi-cyan">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      {/* Header Profile Summary with Unique Trippy Fractal Holographic Glow */}
+      <div className="glass-card p-8 border-t-4 border-t-idbi-cyan relative overflow-hidden rounded-3xl shadow-2xl group">
+        <div className="absolute inset-0 bg-[url('/images/bg-trippy-fractal.jpg')] bg-cover bg-center opacity-15 mix-blend-screen group-hover:opacity-25 group-hover:scale-105 transition-all duration-700 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950/95 backdrop-blur-[2px] pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
           <div className="flex items-start gap-5">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-idbi-navy via-idbi-blue to-idbi-cyan flex items-center justify-center text-2xl font-extrabold text-white shadow-xl">
               {msme.businessName.substring(0, 2).toUpperCase()}

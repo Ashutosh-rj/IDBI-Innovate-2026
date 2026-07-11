@@ -74,52 +74,64 @@ export const ScoreBoostSimulator: React.FC<ScoreBoostSimulatorProps> = ({ msme, 
         </button>
       </div>
 
-      {/* Header */}
-      <div className="glass-card p-5 border-l-4 border-l-idbi-cyan bg-gradient-to-r from-idbi-blue/15 to-slate-900">
-        <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-idbi-cyan animate-pulse" />
-          Score Boost AI Simulator
-        </h3>
-        <p className="text-xs text-slate-300 mt-1">
-          See how improving your tax regularity or lowering OD usage unlocks instant IDBI Bank interest rate rebates!
-        </p>
+      {/* Header with Dark Art Texture */}
+      <div className="glass-card p-5 border-l-4 border-l-idbi-cyan relative overflow-hidden rounded-3xl shadow-xl group">
+        <div className="absolute inset-0 bg-[url('/images/bg-dark-art.jpg')] bg-cover bg-center opacity-30 group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-idbi-navy/80 to-slate-950/90 backdrop-blur-sm pointer-events-none" />
+        <div className="relative z-10">
+          <h3 className="text-lg font-extrabold text-white flex items-center gap-2 group-hover:text-idbi-cyan transition-colors">
+            <Sparkles className="w-5 h-5 text-idbi-cyan animate-pulse" />
+            Score Boost AI Simulator
+          </h3>
+          <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+            See how improving your tax regularity or lowering OD usage unlocks instant IDBI Bank interest rate rebates!
+          </p>
+        </div>
       </div>
 
-      {/* Score Target Card */}
-      <div className="glass-card p-6 text-center border-t-4 border-t-emerald-500 shadow-xl space-y-4">
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Simulated Target Score</p>
+      {/* Score Target Card with Trippy Fractal Holographic Glow */}
+      <div className="glass-card p-6 text-center border-t-4 border-t-emerald-500 shadow-2xl space-y-4 relative overflow-hidden rounded-3xl group">
+        <div className="absolute inset-0 bg-[url('/images/bg-trippy-fractal.jpg')] bg-cover bg-center opacity-20 mix-blend-screen group-hover:opacity-30 group-hover:scale-105 transition-all duration-700 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/90 via-slate-950/80 to-slate-950/95 backdrop-blur-[2px] pointer-events-none" />
         
-        <div className="flex items-baseline justify-center gap-2">
-          <span className={`text-6xl font-black tracking-tight ${
-            simulatedScore >= 700 ? 'text-emerald-400' : simulatedScore >= 600 ? 'text-amber-400' : 'text-rose-400'
-          }`}>
-            {simulatedScore}
-          </span>
-          <span className="text-base font-bold text-slate-500">/ 900</span>
-        </div>
-
-        <div className="flex items-center justify-center gap-3">
-          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-            simulatedScore >= 700 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-            simulatedScore >= 600 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-            'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-          }`}>
-            {newRiskBand.replace('_', ' ')}
-          </span>
-
-          <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${
-            delta >= 0 ? 'bg-idbi-cyan/20 text-idbi-cyan border border-idbi-cyan/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-          }`}>
-            <Zap className="w-3.5 h-3.5" /> {delta >= 0 ? `+${delta}` : delta} pts
-          </span>
-        </div>
-
-        {simulatedScore >= 700 && (
-          <div className="p-3 bg-emerald-500/15 rounded-xl border border-emerald-500/30 text-xs text-emerald-300 font-medium flex items-center justify-center gap-2 animate-bounce">
-            <Award className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Congratulations! You unlock a <strong>0.75% Interest Discount</strong> at IDBI Bank!</span>
+        <div className="relative z-10 space-y-4">
+          <p className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center justify-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-spin" style={{ animationDuration: '8s' }} />
+            Simulated Target Score
+          </p>
+          
+          <div className="flex items-baseline justify-center gap-2">
+            <span className={`text-6xl font-black tracking-tight drop-shadow-lg font-mono ${
+              simulatedScore >= 700 ? 'text-emerald-400' : simulatedScore >= 600 ? 'text-amber-400' : 'text-rose-400'
+            }`}>
+              {simulatedScore}
+            </span>
+            <span className="text-base font-bold text-slate-400">/ 900</span>
           </div>
-        )}
+
+          <div className="flex items-center justify-center gap-3">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-md ${
+              simulatedScore >= 700 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+              simulatedScore >= 600 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' :
+              'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+            }`}>
+              {newRiskBand.replace('_', ' ')}
+            </span>
+
+            <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md ${
+              delta >= 0 ? 'bg-idbi-cyan/20 text-idbi-cyan border border-idbi-cyan/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+            }`}>
+              <Zap className="w-3.5 h-3.5" /> {delta >= 0 ? `+${delta}` : delta} pts
+            </span>
+          </div>
+
+          {simulatedScore >= 700 && (
+            <div className="p-3 bg-emerald-500/20 rounded-xl border border-emerald-500/40 text-xs text-emerald-200 font-medium flex items-center justify-center gap-2 animate-bounce shadow-lg">
+              <Award className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Congratulations! You unlock a <strong>0.75% Interest Discount</strong> at IDBI Bank!</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sliders Grid */}

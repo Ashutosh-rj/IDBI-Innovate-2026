@@ -29,6 +29,12 @@ export interface MsmeProfile {
   isNtcThinFile: boolean;
   subScores: SubScores;
   topReasonCodes: ReasonCode[];
+  ocenLspPayload?: {
+    lspId: string;
+    creditPassportId: string;
+    timestamp: string;
+    verificationStatus: string;
+  };
   keyMetrics: {
     monthlyTurnover: number;
     gstr3bRegularity: number;
