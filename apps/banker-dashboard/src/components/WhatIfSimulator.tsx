@@ -69,22 +69,22 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
   };
 
   return (
-    <div className="glass-card p-8 space-y-8 animate-fadeIn border-t-4 border-t-idbi-cyan">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+    <div className="glass-card p-8 space-y-8 animate-fadeIn border-t-4 border-t-idbi-blue shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-idbi-blue/20 rounded-xl text-idbi-cyan">
+            <div className="p-2.5 bg-idbi-blue/10 rounded-xl text-idbi-navy">
               <Sliders className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 Interactive What-If AI Simulator
                 {isSimulating && (
-                  <span className="w-4 h-4 border-2 border-idbi-cyan border-t-transparent rounded-full animate-spin inline-block" title="Recalculating score via TreeSHAP..." />
+                  <span className="w-4 h-4 border-2 border-idbi-blue border-t-transparent rounded-full animate-spin inline-block" title="Recalculating score via TreeSHAP..." />
                 )}
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Simulate alternate data feature modifications for <strong className="text-white">{msme.businessName}</strong>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Simulate alternate data feature modifications for <strong className="text-slate-900">{msme.businessName}</strong>
               </p>
             </div>
           </div>
@@ -93,14 +93,14 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
           {onClose && (
             <button
               onClick={onClose}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back
             </button>
           )}
           <button
             onClick={resetSliders}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
           >
             <RotateCcw className="w-3.5 h-3.5" /> Reset Sliders
           </button>
@@ -109,27 +109,27 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
 
       {/* Score Comparison Box */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 bg-slate-950/60 rounded-2xl border border-slate-800 text-center">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Health Score</p>
-          <div className="text-4xl font-extrabold text-slate-200 mt-2">{baseScore} <span className="text-xs font-normal text-slate-500">/ 900</span></div>
-          <span className="inline-block mt-2 px-3 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300">
+        <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Current Health Score</p>
+          <div className="text-4xl font-extrabold text-slate-900 mt-2">{baseScore} <span className="text-xs font-normal text-slate-500">/ 900</span></div>
+          <span className="inline-block mt-2 px-3 py-0.5 rounded-full text-[11px] font-bold bg-slate-200 text-slate-700">
             {msme.riskBand.replace('_', ' ')}
           </span>
         </div>
 
-        <div className="p-6 bg-gradient-to-br from-idbi-blue/20 to-idbi-cyan/20 rounded-2xl border border-idbi-cyan/40 text-center flex flex-col justify-center items-center">
-          <p className="text-xs font-semibold text-idbi-cyan uppercase tracking-wider flex items-center gap-1">
+        <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 text-center flex flex-col justify-center items-center">
+          <p className="text-xs font-semibold text-idbi-navy uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3.5 h-3.5" /> Simulated Delta Impact
           </p>
-          <div className={`text-3xl font-black mt-2 ${delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <div className={`text-3xl font-black mt-2 ${delta >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
             {delta >= 0 ? `+${delta}` : delta} <span className="text-sm font-normal">points</span>
           </div>
-          <p className="text-[11px] text-slate-300 mt-1">Real-time XGBoost inference estimation</p>
+          <p className="text-[11px] text-slate-600 mt-1">Real-time XGBoost inference estimation</p>
         </div>
 
-        <div className="p-6 bg-slate-950/80 rounded-2xl border border-slate-800 text-center shadow-lg shadow-emerald-500/5">
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Simulated New Score</p>
-          <div className="text-4xl font-extrabold text-emerald-400 mt-2">{simulatedScore} <span className="text-xs font-normal text-slate-500">/ 900</span></div>
+        <div className="p-6 bg-white rounded-2xl border border-emerald-200 text-center shadow-sm">
+          <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">Simulated New Score</p>
+          <div className="text-4xl font-extrabold text-emerald-700 mt-2">{simulatedScore} <span className="text-xs font-normal text-slate-500">/ 900</span></div>
           <span className={newRiskBand === 'PRIME_RISK' ? 'badge-prime inline-flex mt-2' : newRiskBand === 'MODERATE_RISK' ? 'badge-moderate inline-flex mt-2' : 'badge-high inline-flex mt-2'}>
             {newRiskBand.replace('_', ' ')}
           </span>
@@ -137,12 +137,12 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
       </div>
 
       {/* Sliders Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-950/40 p-6 rounded-2xl border border-slate-800/80">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 p-6 rounded-2xl border border-slate-200">
         {/* GSTR-3B Regularity Slider */}
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm font-semibold">
-            <span className="text-slate-200">GSTR-3B On-Time Filing Regularity</span>
-            <span className="text-idbi-cyan font-bold">{gstr3b.toFixed(0)}%</span>
+            <span className="text-slate-800">GSTR-3B On-Time Filing Regularity</span>
+            <span className="text-idbi-navy font-bold font-mono">{gstr3b.toFixed(0)}%</span>
           </div>
           <input
             type="range"
@@ -151,9 +151,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
             step="5"
             value={gstr3b}
             onChange={(e) => setGstr3b(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-idbi-cyan"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-idbi-blue"
           />
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Current baseline: {(msme.keyMetrics.gstr3bRegularity * 100).toFixed(0)}%. Improving tax compliance directly boosts Tax Compliance Subscore.
           </p>
         </div>
@@ -161,8 +161,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
         {/* Bank OD Limit Utilization Slider */}
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm font-semibold">
-            <span className="text-slate-200">Bank OD Limit Utilization (Account Aggregator)</span>
-            <span className="text-amber-400 font-bold">{odUtil.toFixed(0)}%</span>
+            <span className="text-slate-800">Bank OD Limit Utilization (Account Aggregator)</span>
+            <span className="text-amber-700 font-bold font-mono">{odUtil.toFixed(0)}%</span>
           </div>
           <input
             type="range"
@@ -171,9 +171,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
             step="5"
             value={odUtil}
             onChange={(e) => setOdUtil(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
           />
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Current baseline: {(msme.keyMetrics.odUtilization * 100).toFixed(0)}%. Lowering OD utilization below 50% strengthens Liquidity Buffer.
           </p>
         </div>
@@ -181,8 +181,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
         {/* Cheque Bounces Slider */}
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm font-semibold">
-            <span className="text-slate-200">Cheque Dishonours / Inward Bounces (last 6m)</span>
-            <span className="text-rose-400 font-bold">{bounces} bounces</span>
+            <span className="text-slate-800">Cheque Dishonours / Inward Bounces (last 6m)</span>
+            <span className="text-rose-700 font-bold font-mono">{bounces} bounces</span>
           </div>
           <input
             type="range"
@@ -191,9 +191,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
             step="1"
             value={bounces}
             onChange={(e) => setBounces(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600"
           />
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Current baseline: {msme.keyMetrics.chequeBounces} bounces. Each eliminated bounce removes a -30 pt penalty!
           </p>
         </div>
@@ -201,8 +201,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
         {/* EPF Active Workforce Slider */}
         <div className="space-y-3">
           <div className="flex justify-between items-center text-sm font-semibold">
-            <span className="text-slate-200">EPF Active Workforce Count (Payroll Regularity)</span>
-            <span className="text-emerald-400 font-bold">{epfMembers} members</span>
+            <span className="text-slate-800">EPF Active Workforce Count (Payroll Regularity)</span>
+            <span className="text-emerald-700 font-bold font-mono">{epfMembers} members</span>
           </div>
           <input
             type="range"
@@ -211,24 +211,24 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
             step="5"
             value={epfMembers}
             onChange={(e) => setEpfMembers(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
           />
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Current baseline: {msme.keyMetrics.epfActiveMembers} members. Stable formal employment growth enhances Payroll Stability Subscore.
           </p>
         </div>
       </div>
 
       {/* Actionable Loan Pricing Impact */}
-      <div className="p-6 bg-gradient-to-r from-emerald-500/10 via-idbi-blue/10 to-slate-900 rounded-2xl border border-emerald-500/30 flex items-center justify-between">
+      <div className="p-6 bg-emerald-50 rounded-xl border border-emerald-300 shadow-sm flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-emerald-500/20 rounded-2xl text-emerald-400">
+          <div className="p-3 bg-emerald-100 rounded-xl text-emerald-800">
             <ShieldCheck className="w-7 h-7" />
           </div>
           <div>
-            <h4 className="text-base font-bold text-white">Simulated IDBI Bank Loan Pricing Impact</h4>
-            <p className="text-xs text-slate-300 mt-0.5">
-              If the applicant achieves this simulated score of <strong className="text-emerald-400">{simulatedScore}</strong>, they unlock a <strong className="text-emerald-400">0.75% Interest Rate Rebate</strong> and collateral-free OCEN working capital limit up to ₹50 Lakhs!
+            <h4 className="text-base font-bold text-slate-900">Simulated IDBI Bank Loan Pricing Impact</h4>
+            <p className="text-xs text-slate-700 mt-0.5">
+              If the applicant achieves this simulated score of <strong className="text-emerald-800 font-mono font-bold">{simulatedScore}</strong>, they unlock a <strong className="text-emerald-800 font-bold">0.75% Interest Rate Rebate</strong> and collateral-free OCEN working capital limit up to ₹50 Lakhs!
             </p>
           </div>
         </div>

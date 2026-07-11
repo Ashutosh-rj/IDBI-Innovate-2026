@@ -1,4 +1,5 @@
 import json
+import asyncio
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, Optional
 from models.scorer import HealthScorer
@@ -9,21 +10,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 scorer = HealthScorer()
 
-@router.post("/", summary="Run What-If Simulation by Dynamically Modifying Features")
-async def simulate_what_if(payload: Dict[str, Any]):
-    """
-    Allows Bank Officers and Credit Analysts to run interactive What-If simulations.
-    Accepts a base MSME payload and a dictionary of feature overrides (e.g. improving GST compliance
-    or increasing UPI transaction velocity) and returns the before/after score comparison and SHAP shifts.
-    
-    Guarantees zero hardcoding per Rule 1: every simulation triggers a real model prediction.
-    """
-    base_payload = payload.get("basePayload", {})
-    overrides: Dict[str, float] = payload.get("featureOverrides", {})
-    
-    if not base_payload:
-        raise HTTPException(status_code=400, detail="basePayload is required for simulation.")
-        
+def _run_what_if_sync(base_payload: Dict[str, Any], overrides: Dict[str, float]) -> Dict[str, Any]:
     # Step 1: Compute baseline score
     base_feat_set = scorer.extract_all_features(base_payload)
     base_result = scorer.compute_score_from_features(
@@ -54,7 +41,6 @@ async def simulate_what_if(payload: Dict[str, Any]):
     
     return {
         "msmeId": base_result["msmeId"],
-        "simulationTimestamp": json.dumps(payload.get("timestamp", "NOW")),
         "baseline": {
             "healthScore": base_result["healthScore"],
             "riskBand": base_result["riskBand"],
@@ -74,3 +60,23 @@ async def simulate_what_if(payload: Dict[str, Any]):
         "scoreDelta": sim_result["healthScore"] - base_result["healthScore"],
         "appliedOverrides": overrides
     }
+
+@router.post("/", summary="Run What-If Simulation by Dynamically Modifying Features")
+async def simulate_what_if(payload: Dict[str, Any]):
+    """
+    Allows Bank Officers and Credit Analysts to run interactive What-If simulations.
+    Accepts a base MSME payload and a dictionary of feature overrides (e.g. improving GST compliance
+    or increasing UPI transaction velocity) and returns the before/after score comparison and SHAP shifts.
+    
+    Guarantees zero hardcoding per Rule 1: every simulation triggers a real model prediction.
+    Runs non-blocking via `asyncio.to_thread` worker thread pool.
+    """
+    base_payload = payload.get("basePayload", {})
+    overrides: Dict[str, float] = payload.get("featureOverrides", {})
+    
+    if not base_payload:
+        raise HTTPException(status_code=400, detail="basePayload is required for simulation.")
+        
+    result = await asyncio.to_thread(_run_what_if_sync, base_payload, overrides)
+    result["simulationTimestamp"] = json.dumps(payload.get("timestamp", "NOW"))
+    return result

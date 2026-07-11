@@ -70,7 +70,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-idbi-cyan/30 selection:text-idbi-cyan max-w-md mx-auto shadow-2xl border-x border-slate-900 relative pb-20">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-idbi-blue/20 selection:text-idbi-navy max-w-md mx-auto shadow-2xl border-x border-slate-200 relative pb-20">
       {/* Mobile Header with Live Toggle */}
       <Header
         currentMsme={currentMsme}

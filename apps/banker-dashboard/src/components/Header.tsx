@@ -21,34 +21,36 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isLiveA
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 relative overflow-hidden shadow-xl">
-      {/* Unique Dark Art Background Backdrop for Banker Portal */}
-      <div className="absolute inset-0 bg-[url('/images/bg-dark-art.jpg')] bg-cover bg-top opacity-20 pointer-events-none" />
-      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[2px] pointer-events-none" />
+    <header className="sticky top-0 z-50 bg-[#002B49] border-b border-idbi-blue/30 relative shadow-md text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between min-h-[5.5rem] py-3 gap-4">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3 lg:gap-4">
-            <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-gradient-to-br from-idbi-blue via-idbi-cyan to-emerald-500 flex items-center justify-center shadow-lg shadow-idbi-cyan/20 shrink-0">
-              <ShieldCheck className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
+            <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-xl bg-[#001f35] border border-idbi-blue/40 flex items-center justify-center shadow-sm shrink-0">
+              <ShieldCheck className="w-6 h-6 lg:w-7 lg:h-7 text-idbi-cyan" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-lg lg:text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-100 to-idbi-cyan bg-clip-text text-transparent">
+                <span className="text-lg lg:text-xl font-extrabold tracking-tight text-white whitespace-nowrap">
                   IDBI Innovate 2026
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-idbi-blue/30 text-idbi-cyan border border-idbi-cyan/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-idbi-gold/20 text-idbi-gold border border-idbi-gold/40 shrink-0">
                   Track 03
                 </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-gradient-to-r from-amber-400 to-amber-300 text-[#002B49] border border-amber-200 shadow-sm shrink-0">
+                  ★ Team v22
+                </span>
               </div>
-              <p className="text-[11px] lg:text-xs text-slate-400 font-medium hidden sm:block">
-                MSME Financial Health Score Platform • AI/ML & Alternate Data Engine
-              </p>
+              <div className="text-xs text-slate-200 font-medium mt-1 leading-relaxed flex items-center gap-1.5 flex-wrap">
+                <span>MSME Financial Health Score Platform</span>
+                <span className="text-idbi-cyan font-bold hidden md:inline">•</span>
+                <span className="text-amber-300 font-semibold italic">"Every version is better than the last."</span>
+              </div>
             </div>
           </div>
 
           {/* Desktop Navigation Tabs */}
-          <nav className="hidden xl:flex items-center gap-1 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800">
+          <nav className="hidden xl:flex items-center gap-1 bg-[#001f35] p-1.5 rounded-xl border border-idbi-blue/40">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -56,10 +58,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isLiveA
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+                  className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-idbi-cyan ${
                     isActive
-                      ? 'bg-gradient-to-r from-idbi-blue to-idbi-cyan text-white shadow-md shadow-idbi-blue/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      ? 'bg-idbi-blue text-white shadow-sm'
+                      : 'text-slate-300 hover:text-white hover:bg-idbi-blue/20'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -73,10 +75,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isLiveA
           <div className="flex items-center gap-2 lg:gap-3">
             <button
               onClick={() => setIsLiveApi(!isLiveApi)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border flex items-center gap-2 transition-all duration-200 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-600 ${
                 isLiveApi
-                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40 shadow-sm shadow-emerald-500/10'
-                  : 'bg-amber-500/15 text-amber-400 border-amber-500/40 shadow-sm shadow-amber-500/10'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm'
+                  : 'bg-amber-50 text-amber-800 border-amber-300 shadow-sm'
               }`}
               title="Toggle between Live API Gateway (Port 8080) and Standalone SGSDG Audit Cohort"
             >
@@ -88,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isLiveA
             {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+              className="xl:hidden p-2 rounded-lg bg-[#001f35] border border-idbi-blue/40 text-slate-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-idbi-cyan"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -99,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isLiveA
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-slate-900/95 border-b border-slate-800 px-4 pt-2 pb-4 space-y-1.5 animate-fadeIn">
+        <div className="xl:hidden bg-[#002B49] border-b border-idbi-blue/40 px-4 pt-2 pb-4 space-y-1.5 animate-fadeIn text-white">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -110,10 +112,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, isLiveA
                   setActiveTab(item.id);
                   setMobileMenuOpen(false);
                 }}
-                className={`w-full px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2.5 ${
+                className={`w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-idbi-cyan ${
                   isActive
-                    ? 'bg-gradient-to-r from-idbi-blue to-idbi-cyan text-white shadow-md shadow-idbi-blue/30'
-                    : 'text-slate-300 hover:bg-slate-800/80'
+                    ? 'bg-idbi-blue text-white shadow-sm'
+                    : 'text-slate-200 hover:bg-[#001f35]'
                 }`}
               >
                 <Icon className="w-4 h-4" />

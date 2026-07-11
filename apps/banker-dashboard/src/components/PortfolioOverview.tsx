@@ -101,68 +101,70 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
     <div className="space-y-8 animate-fadeIn">
       {/* KPI Cards Grid with Count-Up Animations */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass-card p-6 border-l-4 border-l-idbi-cyan flex items-center justify-between relative overflow-hidden rounded-2xl shadow-xl group">
-          <div className="absolute inset-0 bg-[url('/images/bg-dark-art.jpg')] bg-cover bg-center opacity-25 group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
-          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[1px] pointer-events-none" />
+        <div className="glass-card p-6 border-l-4 border-l-idbi-blue flex items-center justify-between relative overflow-hidden rounded-xl shadow-sm group">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-[1px] pointer-events-none" />
           <div className="relative z-10">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Assessed MSMEs</p>
-            <h3 className="text-3xl font-extrabold text-white mt-1 font-mono">
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Total Assessed MSMEs</p>
+            <h3 className="text-3xl font-extrabold text-slate-900 mt-1 font-mono">
               <AnimatedCounter end={totalMsmes} />
             </h3>
-            <p className="text-xs text-emerald-400 flex items-center gap-1 mt-2">
+            <p className="text-xs text-emerald-800 font-medium flex items-center gap-1 mt-2">
               <CheckCircle2 className="w-3.5 h-3.5" /> 100% Validated against ReBIT AA & GST schemas
             </p>
           </div>
-          <div className="p-3.5 bg-idbi-cyan/10 rounded-2xl text-idbi-cyan relative z-10">
+          <div className="p-3.5 bg-idbi-blue/10 rounded-xl text-idbi-navy relative z-10">
             <Users className="w-7 h-7" />
           </div>
         </div>
 
-        <div className={`glass-card p-6 border-l-4 ${avgScore >= 700 ? 'border-l-emerald-500' : avgScore >= 600 ? 'border-l-amber-500' : 'border-l-rose-500'} flex items-center justify-between`}>
+        <div className={`glass-card p-6 border-l-4 ${avgScore >= 700 ? 'border-l-emerald-600' : avgScore >= 600 ? 'border-l-amber-600' : 'border-l-rose-600'} flex items-center justify-between rounded-xl`}>
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Average Health Score</p>
-            <h3 className={`text-3xl font-extrabold ${avgScore >= 700 ? 'text-emerald-400' : avgScore >= 600 ? 'text-amber-400' : 'text-rose-400'} mt-1 font-mono`}>
-              <AnimatedCounter end={avgScore} /> <span className="text-sm font-normal text-slate-400">/ 900</span>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Average Health Score</p>
+            <h3 className={`text-3xl font-extrabold ${avgScore >= 700 ? 'text-emerald-800' : avgScore >= 600 ? 'text-amber-800' : 'text-rose-800'} mt-1 font-mono`}>
+              <AnimatedCounter end={avgScore} /> <span className="text-sm font-normal text-slate-600">/ 900</span>
             </h3>
-            <p className="text-xs text-slate-300 mt-2">
-              Portfolio Quality: <span className={`${avgScore >= 700 ? 'text-emerald-400' : avgScore >= 600 ? 'text-amber-400' : 'text-rose-400'} font-semibold`}>
+            <p className="text-xs text-slate-600 mt-2">
+              Portfolio Quality: <span className={`${avgScore >= 700 ? 'text-emerald-800' : avgScore >= 600 ? 'text-amber-800' : 'text-rose-800'} font-semibold`}>
                 {avgScore >= 700 ? 'Prime Tier' : avgScore >= 600 ? 'Moderate Tier' : 'High Risk Tier'}
               </span>
             </p>
           </div>
-          <div className={`p-3.5 ${avgScore >= 700 ? 'bg-emerald-500/10 text-emerald-400' : avgScore >= 600 ? 'bg-amber-500/10 text-amber-400' : 'bg-rose-500/10 text-rose-400'} rounded-2xl`}>
+          <div className={`p-3.5 ${avgScore >= 700 ? 'bg-emerald-50 text-emerald-800' : avgScore >= 600 ? 'bg-amber-50 text-amber-800' : 'bg-rose-50 text-rose-800'} rounded-xl`}>
             <ShieldCheck className="w-7 h-7" />
           </div>
         </div>
 
-        <div className="glass-card p-6 border-l-4 border-l-purple-500 flex items-center justify-between relative overflow-hidden rounded-2xl shadow-xl group">
-          <div className="absolute inset-0 bg-[url('/images/bg-abstract-dots.jpg')] bg-cover bg-center opacity-25 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700 pointer-events-none" />
-          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-[1px] pointer-events-none" />
+        <div className="glass-card p-6 border-l-4 border-l-purple-600 flex items-center justify-between relative overflow-hidden rounded-xl shadow-sm group">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-[1px] pointer-events-none" />
           <div className="relative z-10">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">NTC Thin-File Ratio</p>
-            <h3 className="text-3xl font-extrabold text-purple-400 mt-1 font-mono">
-              <AnimatedCounter end={ntcRatio} suffix="%" /> <span className="text-sm font-normal text-slate-400">({ntcCount} units)</span>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">NTC Thin-File Ratio</p>
+            <h3 className="text-3xl font-extrabold text-purple-800 mt-1 font-mono">
+              <AnimatedCounter end={ntcRatio} suffix="%" /> <span className="text-sm font-normal text-slate-600">({ntcCount} units)</span>
             </h3>
-            <p className="text-xs text-purple-300 mt-2">
+            <p className="text-xs text-purple-800 font-medium mt-2">
               Scored via Alternate GST/UPI/EPFO streams
             </p>
           </div>
-          <div className="p-3.5 bg-purple-500/10 rounded-2xl text-purple-400 relative z-10">
+          <div className="p-3.5 bg-purple-50 rounded-xl text-purple-800 relative z-10">
             <TrendingUp className="w-7 h-7" />
           </div>
         </div>
 
-        <div className="glass-card p-6 border-l-4 border-l-amber-500 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">12M Default Probability (PD)</p>
-            <h3 className="text-3xl font-extrabold text-amber-400 mt-1 font-mono">
+        <div className="glass-card p-6 border-l-4 border-l-idbi-gold flex items-center justify-between rounded-xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-50/20 via-transparent to-transparent pointer-events-none" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">12M Default Probability (PD)</p>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-50 text-[#9A7B1C] border border-amber-300">★ Strategic KPI</span>
+            </div>
+            <h3 className="text-3xl font-extrabold text-[#8C6D1F] mt-1 font-mono">
               <AnimatedCounter end={avgPd} decimals={2} suffix="%" />
             </h3>
-            <p className="text-xs text-slate-300 mt-2">
+            <p className="text-xs text-slate-600 mt-2">
               Calibrated via XGBoost + Isotonic Regression
             </p>
           </div>
-          <div className="p-3.5 bg-amber-500/10 rounded-2xl text-amber-400">
+          <div className="p-3.5 bg-amber-50 rounded-xl text-[#8C6D1F] relative z-10 border border-amber-200">
             <AlertTriangle className="w-7 h-7" />
           </div>
         </div>
@@ -174,12 +176,12 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-idbi-blue/20 rounded-xl text-idbi-cyan">
+              <div className="p-2.5 bg-idbi-blue/10 rounded-xl text-idbi-navy">
                 <BarChart3 className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-lg font-bold text-white">Health Score Distribution</h4>
-                <p className="text-xs text-slate-400">XGBoost 2.1 Model Output across 300-900 Scale</p>
+                <h4 className="text-lg font-bold text-slate-900">Health Score Distribution</h4>
+                <p className="text-xs text-slate-500">XGBoost 2.1 Model Output across 300-900 Scale</p>
               </div>
             </div>
           </div>
@@ -189,10 +191,10 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
                 <XAxis dataKey="range" stroke="#64748b" fontSize={12} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={12} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', color: '#fff' }}
-                  cursor={{ fill: 'rgba(51, 65, 85, 0.2)' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', color: '#0f172a', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                  cursor={{ fill: 'rgba(241, 245, 249, 0.8)' }}
                 />
-                <Bar dataKey="count" fill="#00A3E0" radius={[8, 8, 0, 0]}>
+                <Bar dataKey="count" fill="#005A9C" radius={[8, 8, 0, 0]}>
                   {scoreBins.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={index > 3 ? '#10B981' : index > 1 ? '#F59E0B' : '#EF4444'} />
                   ))}
@@ -206,12 +208,12 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
+              <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-700">
                 <PieIcon className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-lg font-bold text-white">Portfolio Risk Segmentation</h4>
-                <p className="text-xs text-slate-400">Basel-III & RBI Credit Risk Tier Allocation</p>
+                <h4 className="text-lg font-bold text-slate-900">Portfolio Risk Segmentation</h4>
+                <p className="text-xs text-slate-500">Basel-III & RBI Credit Risk Tier Allocation</p>
               </div>
             </div>
           </div>
@@ -232,18 +234,18 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px' }} />
+                  <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: '12px', color: '#0f172a', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
             <div className="w-full sm:w-1/2 space-y-3">
               {pieData.map((item) => (
-                <div key={item.name} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-800">
+                <div key={item.name} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <div className="flex items-center gap-3">
                     <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs font-semibold text-slate-200">{item.name}</span>
+                    <span className="text-xs font-semibold text-slate-800">{item.name}</span>
                   </div>
-                  <span className="text-sm font-bold text-white font-mono">{item.value} <span className="text-xs font-normal text-slate-400">({Math.round((item.value / totalMsmes) * 100)}%)</span></span>
+                  <span className="text-sm font-bold text-slate-900 font-mono">{item.value} <span className="text-xs font-normal text-slate-500">({Math.round((item.value / totalMsmes) * 100)}%)</span></span>
                 </div>
               ))}
             </div>
@@ -256,12 +258,12 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
         {/* Sector-wise Concentration Heatmap */}
         <div className="glass-card p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-idbi-cyan/10 rounded-xl text-idbi-cyan">
+            <div className="p-2.5 bg-idbi-blue/10 rounded-xl text-idbi-navy">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-lg font-bold text-white">Sector Concentration Heatmap</h4>
-              <p className="text-xs text-slate-400">Portfolio exposure, average health score, and prime ratio across sectors</p>
+              <h4 className="text-lg font-bold text-slate-900">Sector Concentration Heatmap</h4>
+              <p className="text-xs text-slate-500">Portfolio exposure, average health score, and prime ratio across sectors</p>
             </div>
           </div>
 
@@ -271,26 +273,26 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
                 key={sec.sector}
                 className={`p-3.5 rounded-xl border transition-all ${
                   sec.avgScore >= 700
-                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                     : sec.avgScore >= 640
-                    ? 'bg-amber-950/40 border-amber-500/40 text-amber-300'
-                    : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                    ? 'bg-amber-50 border-amber-200 text-amber-900'
+                    : 'bg-rose-50 border-rose-200 text-rose-900'
                 }`}
               >
                 <div className="flex justify-between items-start">
-                  <span className="text-xs font-bold truncate text-white">{sec.sector}</span>
-                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-900/80 text-slate-300">
+                  <span className="text-xs font-bold truncate text-slate-900">{sec.sector}</span>
+                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-white text-slate-700 border border-slate-200">
                     {sec.percentageOfPortfolio}%
                   </span>
                 </div>
                 <div className="mt-2.5 flex items-baseline justify-between font-mono">
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase">Avg Score</span>
+                    <span className="text-[10px] text-slate-500 block uppercase">Avg Score</span>
                     <strong className="text-base font-extrabold">{sec.avgScore}</strong>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase">Prime %</span>
-                    <strong className="text-sm font-bold text-slate-200">{sec.primeRatio}%</strong>
+                    <span className="text-[10px] text-slate-500 block uppercase">Prime %</span>
+                    <strong className="text-sm font-bold text-slate-800">{sec.primeRatio}%</strong>
                   </div>
                 </div>
               </div>
@@ -301,40 +303,40 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
         {/* NTC vs Established Comparison Chart */}
         <div className="glass-card p-6 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-400">
+            <div className="p-2.5 bg-purple-50 rounded-xl text-purple-700">
               <GitCompare className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-lg font-bold text-white">NTC vs Established Cohort Assessment</h4>
-              <p className="text-xs text-slate-400">Comparing alternate-data only borrowers vs traditional vintage borrowers</p>
+              <h4 className="text-lg font-bold text-slate-900">NTC vs Established Cohort Assessment</h4>
+              <p className="text-xs text-slate-500">Comparing alternate-data only borrowers vs traditional vintage borrowers</p>
             </div>
           </div>
 
           <div className="space-y-4 pt-2">
-            <div className="p-4 bg-slate-900/80 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="space-y-1 text-center sm:text-left">
-                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">New-to-Credit (NTC) Cohort</span>
-                <div className="text-2xl font-black font-mono text-white flex items-center gap-2">
+                <span className="text-xs font-bold text-purple-700 uppercase tracking-wider">New-to-Credit (NTC) Cohort</span>
+                <div className="text-2xl font-black font-mono text-slate-900 flex items-center gap-2">
                   <span>{ntcAvgScore} pts</span>
-                  <span className="text-xs font-normal text-slate-400">({ntcCount} borrowers)</span>
+                  <span className="text-xs font-normal text-slate-500">({ntcCount} borrowers)</span>
                 </div>
-                <p className="text-[11px] text-slate-400">Avg PD: <strong className="text-amber-400 font-mono">{ntcAvgPd.toFixed(2)}%</strong> • 100% Alternate Data</p>
+                <p className="text-[11px] text-slate-600">Avg PD: <strong className="text-amber-700 font-mono">{ntcAvgPd.toFixed(2)}%</strong> • 100% Alternate Data</p>
               </div>
 
-              <div className="h-10 w-px bg-slate-800 hidden sm:block" />
+              <div className="h-10 w-px bg-slate-200 hidden sm:block" />
 
               <div className="space-y-1 text-center sm:text-right">
-                <span className="text-xs font-bold text-idbi-cyan uppercase tracking-wider">Established Vintage Cohort</span>
-                <div className="text-2xl font-black font-mono text-white flex items-center justify-end gap-2">
+                <span className="text-xs font-bold text-idbi-navy uppercase tracking-wider">Established Vintage Cohort</span>
+                <div className="text-2xl font-black font-mono text-slate-900 flex items-center justify-end gap-2">
                   <span>{estAvgScore} pts</span>
-                  <span className="text-xs font-normal text-slate-400">({establishedCohort.length} borrowers)</span>
+                  <span className="text-xs font-normal text-slate-500">({establishedCohort.length} borrowers)</span>
                 </div>
-                <p className="text-[11px] text-slate-400">Avg PD: <strong className="text-emerald-400 font-mono">{estAvgPd.toFixed(2)}%</strong> • Traditional + Alternate</p>
+                <p className="text-[11px] text-slate-600">Avg PD: <strong className="text-emerald-700 font-mono">{estAvgPd.toFixed(2)}%</strong> • Traditional + Alternate</p>
               </div>
             </div>
 
-            <div className="p-3.5 bg-idbi-blue/10 border border-idbi-cyan/30 rounded-xl text-xs text-slate-300 leading-relaxed">
-              <strong className="text-idbi-cyan">Key Audit Finding:</strong> Our 36-feature LightGBM scoring model successfully brings NTC thin-file enterprises to an average score of <strong className="text-white font-mono">{ntcAvgScore}</strong> (within <strong className="text-emerald-400">{Math.abs(estAvgScore - ntcAvgScore)} points</strong> of established borrowers), eliminating traditional rejection barriers while keeping default risk tightly controlled at <strong className="text-white font-mono">{ntcAvgPd.toFixed(2)}%</strong>.
+            <div className="p-3.5 bg-idbi-blue/5 border border-idbi-blue/20 rounded-xl text-xs text-slate-700 leading-relaxed">
+              <strong className="text-idbi-navy">Key Audit Finding:</strong> Our 36-feature LightGBM scoring model successfully brings NTC thin-file enterprises to an average score of <strong className="text-slate-900 font-mono">{ntcAvgScore}</strong> (within <strong className="text-emerald-700">{Math.abs(estAvgScore - ntcAvgScore)} points</strong> of established borrowers), eliminating traditional rejection barriers while keeping default risk tightly controlled at <strong className="text-slate-900 font-mono">{ntcAvgPd.toFixed(2)}%</strong>.
             </div>
           </div>
         </div>
@@ -342,17 +344,17 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
 
       {/* Recent Top Performers / Quick Action List */}
       <div className="glass-card p-6">
-        <h4 className="text-lg font-bold text-white mb-4">Top Assessed MSME Applicants (Audit Ready)</h4>
+        <h4 className="text-lg font-bold text-slate-900 mb-4">Top Assessed MSME Applicants (Audit Ready)</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {cohort.slice(0, 3).map((msme) => (
             <div
               key={msme.msmeId}
               onClick={() => onSelectMsme(msme)}
-              className="p-4 bg-slate-800/40 hover:bg-slate-800/80 rounded-xl border border-slate-800 hover:border-idbi-cyan/40 transition-all cursor-pointer flex items-center justify-between group"
+              className="p-4 bg-slate-50 hover:bg-white rounded-xl border border-slate-200 hover:border-idbi-blue/40 transition-all cursor-pointer flex items-center justify-between group shadow-2xs hover:shadow-sm"
             >
               <div>
-                <p className="text-sm font-bold text-white group-hover:text-idbi-cyan transition-colors">{msme.businessName}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{msme.sector} • {msme.udyamNumber}</p>
+                <p className="text-sm font-bold text-slate-900 group-hover:text-idbi-blue transition-colors">{msme.businessName}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{msme.sector} • {msme.udyamNumber}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <span className={msme.riskBand === 'PRIME_RISK' ? 'badge-prime' : 'badge-moderate'}>
                     {msme.riskBand.replace('_', ' ')}
@@ -361,8 +363,8 @@ export const PortfolioOverview: React.FC<PortfolioOverviewProps> = ({ cohort, on
                 </div>
               </div>
               <div className="text-right font-mono">
-                <span className="text-2xl font-extrabold text-emerald-400">{msme.healthScore}</span>
-                <p className="text-[10px] text-slate-400 mt-1">PD: {(msme.defaultProbability12m * 100).toFixed(1)}%</p>
+                <span className="text-2xl font-extrabold text-emerald-700">{msme.healthScore}</span>
+                <p className="text-[10px] text-slate-500 mt-1">PD: {(msme.defaultProbability12m * 100).toFixed(1)}%</p>
               </div>
             </div>
           ))}

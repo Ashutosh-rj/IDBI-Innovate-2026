@@ -97,7 +97,7 @@ export async function fetchLiveMsmeScore(
 
   try {
     const udyamRes = await axios.get(`${GATEWAY_URL}/registry/msme/${baseProfile.msmeId}/udyam`, { timeout: 2000 }).catch(
-      () => axios.get(`http://localhost:8083/api/v1/registry/msme/${baseProfile.msmeId}/udyam`, { timeout: 2000 })
+      () => axios.get(`http://localhost:8081/api/v1/registry/msme/${baseProfile.msmeId}/udyam`, { timeout: 2000 })
     );
     if (udyamRes?.data?.udyamNumber) {
       udyamNumber = udyamRes.data.udyamNumber;

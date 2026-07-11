@@ -10,12 +10,35 @@ from api.routes import score, health_card, simulate, monitoring
 
 logger = structlog.get_logger()
 
+from contextlib import asynccontextmanager
+from core.redis_pool import redis_pool
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting MSME ML Scoring Engine...", version=settings.VERSION, mode=settings.ADAPTER_MODE)
+    if settings.REDIS_PASSWORD in ["msme_redis_secret", "password", "admin", "secret"] or not settings.REDIS_PASSWORD:
+        if settings.ENVIRONMENT.lower() == "production":
+            logger.error("FATAL: Default or missing REDIS_PASSWORD detected in production environment!")
+            raise RuntimeError("CRITICAL SECURITY ERROR: Default REDIS_PASSWORD forbidden in production environment per AUDIT-T0-3.")
+        else:
+            logger.warning("SECURITY WARNING: Using default or insecure REDIS_PASSWORD. Do not use in production!")
+    
+    await redis_pool.init_pool()
+    consumer_task = asyncio.create_task(run_kafka_consumer_loop())
+    
+    yield
+    
+    logger.info("Shutting down MSME ML Scoring Engine...")
+    consumer_task.cancel()
+    await redis_pool.close_pool()
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description="Production-grade AI/ML Credit Scoring Engine with XGBoost, LightGBM, TreeSHAP, and OCEN 4.0 Loan Eligibility",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS Middleware for React frontends
@@ -34,21 +57,6 @@ api_router.include_router(simulate.router, prefix="/simulate", tags=["What-If Si
 api_router.include_router(monitoring.router, prefix="/monitoring", tags=["Drift & Calibration Monitoring"])
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Starting MSME ML Scoring Engine...", version=settings.VERSION, mode=settings.ADAPTER_MODE)
-    if settings.REDIS_PASSWORD in ["msme_redis_secret", "password", "admin", "secret"] or not settings.REDIS_PASSWORD:
-        if settings.ENVIRONMENT.lower() == "production":
-            logger.error("FATAL: Default or missing REDIS_PASSWORD detected in production environment!")
-            raise RuntimeError("CRITICAL SECURITY ERROR: Default REDIS_PASSWORD forbidden in production environment per AUDIT-T0-3.")
-        else:
-            logger.warning("SECURITY WARNING: Using default or insecure REDIS_PASSWORD. Do not use in production!")
-    asyncio.create_task(run_kafka_consumer_loop())
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("Shutting down MSME ML Scoring Engine...")
 
 async def run_kafka_consumer_loop():
     """

@@ -7,7 +7,19 @@ from models.scorer import HealthScorer
 @pytest.fixture(scope="module")
 def schemas():
     """Loads all v1 JSON contract schemas from contracts/v1 directory."""
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../contracts/v1"))
+    candidates = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../contracts/v1")),
+        "/app/contracts/v1",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "../../contracts/v1"))
+    ]
+    base_dir = None
+    for cand in candidates:
+        if os.path.exists(cand) and os.path.isdir(cand):
+            base_dir = cand
+            break
+    if not base_dir:
+        raise FileNotFoundError(f"Could not locate contracts/v1 directory in candidates: {candidates}")
+        
     loaded = {}
     for filename in os.listdir(base_dir):
         if filename.endswith(".schema.json"):

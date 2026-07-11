@@ -1,40 +1,24 @@
-import json
-import redis
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 from core.config import settings
+from core.redis_pool import redis_pool
 import structlog
 
 logger = structlog.get_logger()
 router = APIRouter()
-
-try:
-    redis_client = redis.Redis(
-        host=settings.REDIS_HOST,
-        port=settings.REDIS_PORT,
-        password=settings.REDIS_PASSWORD,
-        decode_responses=True,
-        socket_timeout=2.0
-    )
-except Exception:
-    redis_client = None
 
 @router.get("/{msme_id}", summary="Retrieve Immutable Health Card & OCEN 4.0 Payload")
 async def get_health_card(msme_id: str):
     """
     Retrieves the latest computed Financial Health Card for the specified MSME entity.
     Returns the scorecard formatted for both UI display and direct OCEN 4.0 / ULI publishing.
+    Utilizes non-blocking asynchronous Redis connection pooling.
     """
     cache_key = f"health_score:{msme_id}"
+    score_data = await redis_pool.get_json(cache_key)
     
-    if redis_client:
-        try:
-            cached_res = redis_client.get(cache_key)
-            if cached_res:
-                score_data = json.loads(cached_res)
-                return _format_health_card_response(score_data)
-        except Exception as e:
-            logger.debug("Redis read failed during health card lookup", error=str(e))
+    if score_data:
+        return _format_health_card_response(score_data)
             
     raise HTTPException(
         status_code=404,

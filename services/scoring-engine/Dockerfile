@@ -15,7 +15,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     -r /app/data-generators/sgsdg/requirements.txt \
     -r /app/services/scoring-engine/requirements.txt
 
-# Copy application source code after dependency installation
+# Copy application source code and JSON contract schemas after dependency installation
+COPY contracts /app/contracts
 COPY data-generators/sgsdg /app/data-generators/sgsdg
 COPY services/scoring-engine /app/services/scoring-engine
 

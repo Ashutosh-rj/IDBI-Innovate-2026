@@ -16,27 +16,27 @@ spring:
       routes:
         # Route to MSME Registry Service (Udyam & KYC)
         - id: msme-registry-route
-          uri: http://${REGISTRY_HOST:localhost}:8083
+          uri: ${ROUTING_MSME_REGISTRY_URL:http://localhost:8081}
           predicates:
             - Path=/api/v1/registry/**
         # Route to Consent & AA Service (ReBIT AA v2.0 Flow)
         - id: consent-aa-route
-          uri: http://${CONSENT_HOST:localhost}:8081
+          uri: ${ROUTING_CONSENT_AA_URL:http://localhost:8082}
           predicates:
             - Path=/api/v1/consent/**
         # Route to Ingestion Service (Alt Data Streams)
         - id: ingestion-route
-          uri: http://${INGESTION_HOST:localhost}:8082
+          uri: ${ROUTING_INGESTION_URL:http://localhost:8083}
           predicates:
             - Path=/api/v1/ingestion/**
         # Route to Health Card Service (Immutable Scorecards & OCEN)
         - id: health-card-route
-          uri: http://${HEALTH_CARD_HOST:localhost}:8084
+          uri: ${ROUTING_HEALTH_CARD_URL:http://localhost:8084}
           predicates:
             - Path=/api/v1/health-card/**
         # Route to Python FastAPI Scoring Engine (/score & /simulate) - Stricter rate limits for ML inference
         - id: scoring-engine-route
-          uri: http://${SCORING_HOST:localhost}:8000
+          uri: ${ROUTING_SCORING_ENGINE_URL:http://localhost:8000}
           predicates:
             - Path=/api/v1/score/**, /api/v1/simulate/**
           filters:
