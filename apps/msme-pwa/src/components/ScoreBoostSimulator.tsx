@@ -51,6 +51,8 @@ export const ScoreBoostSimulator: React.FC<ScoreBoostSimulatorProps> = ({ msme, 
     setBounces(msme.keyMetrics.chequeBounces);
   };
 
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+
   return (
     <div className="space-y-6 pb-24 animate-fadeIn">
       {/* Top Bar */}
@@ -62,7 +64,10 @@ export const ScoreBoostSimulator: React.FC<ScoreBoostSimulatorProps> = ({ msme, 
           <ArrowLeft className="w-4 h-4" /> Back to Home
         </button>
         <button
-          onClick={resetSliders}
+          onClick={() => {
+            resetSliders();
+            setIsSubmitted(false);
+          }}
           className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1"
         >
           <RotateCcw className="w-3.5 h-3.5" /> Reset
@@ -137,6 +142,7 @@ export const ScoreBoostSimulator: React.FC<ScoreBoostSimulatorProps> = ({ msme, 
               const val = Number(e.target.value);
               setGstr3b(val);
               handleSliderChange(baseScore + delta);
+              setIsSubmitted(false);
             }}
             className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-idbi-cyan"
           />
@@ -161,6 +167,7 @@ export const ScoreBoostSimulator: React.FC<ScoreBoostSimulatorProps> = ({ msme, 
               const val = Number(e.target.value);
               setOdUtil(val);
               handleSliderChange(baseScore + delta);
+              setIsSubmitted(false);
             }}
             className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
           />
@@ -185,6 +192,7 @@ export const ScoreBoostSimulator: React.FC<ScoreBoostSimulatorProps> = ({ msme, 
               const val = Number(e.target.value);
               setBounces(val);
               handleSliderChange(baseScore + delta);
+              setIsSubmitted(false);
             }}
             className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
           />
@@ -194,13 +202,25 @@ export const ScoreBoostSimulator: React.FC<ScoreBoostSimulatorProps> = ({ msme, 
         </div>
       </div>
 
-      {/* CTA Button */}
-      <button
-        onClick={() => alert(`Submitting action plan to IDBI Bank Loan Officer for ${msme.businessName}...`)}
-        className="btn-primary py-3.5 text-sm"
-      >
-        Submit Target to IDBI Loan Officer &rarr;
-      </button>
+      {/* CTA Button or Submitted Confirmation */}
+      {isSubmitted ? (
+        <div className="p-4 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl text-center space-y-2 animate-fadeIn shadow-xl">
+          <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+            <Award className="w-5 h-5" />
+          </div>
+          <h4 className="text-sm font-bold text-white">Target Plan Submitted to IDBI Bank!</h4>
+          <p className="text-xs text-slate-300">
+            Your simulated milestone plan has been logged with the IDBI Loan Officer under OCEN LSP Reference <strong className="text-emerald-400 font-mono">#IDBI-2026-ACT-882</strong>.
+          </p>
+        </div>
+      ) : (
+        <button
+          onClick={() => setIsSubmitted(true)}
+          className="btn-primary py-3.5 text-sm w-full font-bold shadow-lg shadow-idbi-blue/30"
+        >
+          Submit Target to IDBI Loan Officer &rarr;
+        </button>
+      )}
     </div>
   );
 };

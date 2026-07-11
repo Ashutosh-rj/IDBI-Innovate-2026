@@ -1,14 +1,12 @@
-version: '3.8'
-
 services:
   # 1. PostgreSQL 16 Database
   postgres:
     image: postgres:16
     container_name: msme-postgres
     environment:
-      POSTGRES_DB: msme_health
-      POSTGRES_USER: msme_admin
-      POSTGRES_PASSWORD: msme_secure_password_2026
+      POSTGRES_DB: ${POSTGRES_DB:-msme_health}
+      POSTGRES_USER: ${POSTGRES_USER:-msme_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-msme_secure_password_2026}
     ports:
       - "5432:5432"
     volumes:
@@ -27,11 +25,11 @@ services:
     container_name: msme-redis
     ports:
       - "6379:6379"
-    command: redis-server --save 20 1 --loglevel warning --requirepass msme_redis_secret
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-msme_redis_secret}
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "msme_redis_secret", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-msme_redis_secret}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -81,11 +79,11 @@ services:
       - "8000:8000"
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - MODEL_PATH=/app/models/saved/xgboost_health_scorer.model
+      - MODEL_PATH=/app/services/scoring-engine/ml/artifacts/model.pkl
       - ENVIRONMENT=production
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - REDIS_PASSWORD=msme_redis_secret
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-msme_redis_secret}
     depends_on:
       kafka:
         condition: service_healthy
@@ -103,9 +101,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/msme_health
-      - SPRING_DATASOURCE_USERNAME=msme_admin
-      - SPRING_DATASOURCE_PASSWORD=msme_secure_password_2026
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-msme_health}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-msme_admin}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-msme_secure_password_2026}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       postgres:
@@ -124,9 +122,9 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/msme_health
-      - SPRING_DATASOURCE_USERNAME=msme_admin
-      - SPRING_DATASOURCE_PASSWORD=msme_secure_password_2026
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-msme_health}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-msme_admin}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-msme_secure_password_2026}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     depends_on:
       postgres:
@@ -162,9 +160,9 @@ services:
     ports:
       - "8084:8084"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/msme_health
-      - SPRING_DATASOURCE_USERNAME=msme_admin
-      - SPRING_DATASOURCE_PASSWORD=msme_secure_password_2026
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-msme_health}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-msme_admin}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-msme_secure_password_2026}
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - OCEN_SANDBOX_URL=https://sandbox.ocen.dev/v4/credit-passport
     depends_on:
@@ -186,7 +184,8 @@ services:
     environment:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_DATA_REDIS_PASSWORD=msme_redis_secret
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD:-msme_redis_secret}
+      - JWT_SECRET=${JWT_SECRET:-idbi_innovate_2026_super_secret_jwt_signing_key_at_least_256_bits}
       - ROUTING_MSME_REGISTRY_URL=http://msme-registry:8081
       - ROUTING_CONSENT_AA_URL=http://consent-aa:8082
       - ROUTING_INGESTION_URL=http://ingestion:8083
@@ -220,8 +219,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=msme_grafana_admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-msme_grafana_admin}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_ANALYTICS_CHECK_FOR_UPDATES=false
       - GF_ANALYTICS_REPORTING_ENABLED=false

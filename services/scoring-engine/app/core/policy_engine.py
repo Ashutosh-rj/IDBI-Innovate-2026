@@ -75,12 +75,33 @@ class RiskPolicyEngine:
                     "ocenEligibility": {"isEligible": False, "maxLoanAmountInr": 0.0, "recommendedInterestRatePa": 0.0},
                     "ntcThinFileRules": {"isEligible": False, "maxLoanAmountInr": 0.0, "recommendedInterestRatePa": 0.0}
                 }
-            ]
+            ],
+            "subscoreWeights": {
+                "taxComplianceScore": 0.30,
+                "cashFlowVelocityScore": 0.25,
+                "payrollStabilityScore": 0.15,
+                "businessVintageScore": 0.15,
+                "liquidityBufferScore": 0.15
+            }
         }
 
     def get_policy(self) -> Dict[str, Any]:
         """Returns the currently active risk policy dictionary."""
         return self._load_policy()
+
+    def get_weights(self) -> Dict[str, float]:
+        """Returns heuristic subscore weights from the policy, with fail-closed validation."""
+        policy = self._load_policy()
+        default_weights = self._get_default_policy()["subscoreWeights"]
+        weights = policy.get("subscoreWeights", default_weights)
+        if not isinstance(weights, dict):
+            logger.warning("Policy weights format invalid, using default weights", weights=weights)
+            return default_weights
+        total = sum(weights.values())
+        if total <= 0 or abs(total - 1.0) > 0.05:
+            logger.warning("Policy weights do not sum to 1.0, using default weights", total=total)
+            return default_weights
+        return weights
 
     def get_risk_tier(self, score: int, is_ntc: bool) -> Tuple[str, bool, float, float]:
         """

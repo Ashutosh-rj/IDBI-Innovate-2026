@@ -113,13 +113,23 @@ def get_reason_code(feature_name: str, shap_value: float) -> Dict[str, Any]:
         "action": "Monitor and optimize this operational metric to improve overall financial health."
     })
     
-    is_positive = shap_value >= 0
+    # In default probability model, shap_value < 0 lowers default risk (improves health score -> POSITIVE impact).
+    # shap_value >= 0 increases default risk (lowers health score -> NEGATIVE impact).
+    is_favorable = shap_value < 0
+    points_impact = max(1, int(round(abs(shap_value) * 60.0)))
+    
+    explanation = catalog_entry["positive"] if is_favorable else catalog_entry["negative"]
+    if not is_favorable and abs(shap_value) > 0.005:
+        action_advice = f"{catalog_entry['action']} (Counterfactual estimation: resolving this risk factor can boost your health score by approx +{points_impact} points)."
+    else:
+        action_advice = catalog_entry["action"] if not is_favorable else "Maintain current performance standards."
+    
     return {
         "code": catalog_entry["code"],
         "featureName": feature_name,
         "title": catalog_entry["title"],
-        "impactDirection": "POSITIVE" if is_positive else "NEGATIVE",
+        "impactDirection": "POSITIVE" if is_favorable else "NEGATIVE",
         "shapContribution": round(float(shap_value), 4),
-        "explanation": catalog_entry["positive"] if is_positive else catalog_entry["negative"],
-        "actionableAdvice": catalog_entry["action"] if not is_positive else "Maintain current performance standards."
+        "explanation": explanation,
+        "actionableAdvice": action_advice
     }

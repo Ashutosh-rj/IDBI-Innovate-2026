@@ -33,7 +33,10 @@ temp/
 .system_generated/
 brain/
 .agent/
+.agents/
+.antigravity/
 scratch/
+*.DLQ
 
 # --- IDEs & Editors ---
 # VS Code
@@ -191,6 +194,8 @@ xgboost.json
 saved_models/
 ml/artifacts/
 !services/scoring-engine/models/saved/.gitkeep
+!services/scoring-engine/ml/artifacts/model.pkl
+!services/scoring-engine/ml/artifacts/.gitkeep
 
 # --- JavaScript / TypeScript / React (Vite / PWA) ---
 node_modules/

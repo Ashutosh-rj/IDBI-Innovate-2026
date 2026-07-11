@@ -2,8 +2,8 @@ import axios from 'axios';
 import type { MsmeProfile } from '../types';
 import { transformScoringResponse } from './transform';
 
-const GATEWAY_URL = 'http://localhost:8080/api/v1';
-const DIRECT_SCORING_URL = 'http://localhost:8000/api/v1';
+const GATEWAY_URL = import.meta.env.VITE_GATEWAY_URL || 'http://localhost:8080/api/v1';
+const DIRECT_SCORING_URL = import.meta.env.VITE_SCORING_URL || 'http://localhost:8000/api/v1';
 
 /**
  * Helper to build a realistic multi-stream data payload from a base MSME profile
@@ -52,34 +52,32 @@ function buildScoringPayload(profile: MsmeProfile) {
  * by making real HTTP POST calls to the live API Gateway (or fallback scoring engine).
  */
 export async function fetchLiveCohort(baseProfiles: MsmeProfile[]): Promise<MsmeProfile[]> {
-  const liveProfiles: MsmeProfile[] = [];
-
-  for (const baseProfile of baseProfiles) {
+  const promises = baseProfiles.map(async (baseProfile) => {
     const payload = buildScoringPayload(baseProfile);
     let apiResp = null;
 
     try {
       // Try Gateway first (:8080)
-      const res = await axios.post(`${GATEWAY_URL}/score/`, payload, { timeout: 3000 });
+      const res = await axios.post(`${GATEWAY_URL}/score/`, payload, { timeout: 2500 });
       apiResp = res.data;
     } catch (gatewayErr) {
       try {
         // Fallback to direct Python FastAPI Scoring Engine (:8000)
-        const resDirect = await axios.post(`${DIRECT_SCORING_URL}/score/`, payload, { timeout: 3000 });
+        const resDirect = await axios.post(`${DIRECT_SCORING_URL}/score/`, payload, { timeout: 2500 });
         apiResp = resDirect.data;
       } catch (directErr) {
-        console.warn(`Live inference failed for ${baseProfile.msmeId}. Using base profile.`, directErr);
+        console.warn(`Live inference failed for ${baseProfile.msmeId}. Using base profile.`);
       }
     }
 
     if (apiResp) {
-      liveProfiles.push(transformScoringResponse(apiResp, baseProfile));
+      return transformScoringResponse(apiResp, baseProfile);
     } else {
-      liveProfiles.push(baseProfile);
+      return baseProfile;
     }
-  }
+  });
 
-  return liveProfiles;
+  return await Promise.all(promises);
 }
 
 /**

@@ -13,6 +13,7 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
   const [showModal, setShowModal] = useState(false);
   const [selectedBank, setSelectedBank] = useState('HDFC Bank Ltd (DEPOSIT)');
   const [purpose, setPurpose] = useState('101 - CREDIT_SCORE_ASSESSMENT');
+  const [actionFeedback, setActionFeedback] = useState<{ message: string; type: 'grant' | 'revoke' } | null>(null);
 
   const handleCreateConsent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +33,12 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
 
     onGrantConsent(record);
     setShowModal(false);
+    setActionFeedback({ message: `ReBIT AA Consent (${newHandle}) granted & active with ${selectedBank}!`, type: 'grant' });
+  };
+
+  const handleRevoke = (handle: string) => {
+    onRevokeConsent(handle);
+    setActionFeedback({ message: `Consent (${handle}) immediately revoked. Data stream terminated under DPDP Act 2023.`, type: 'revoke' });
   };
 
   return (
@@ -46,6 +53,21 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
         </button>
         <span className="text-xs font-bold text-slate-400">ReBIT AA v2.0 Protocol</span>
       </div>
+
+      {/* Action Feedback Banner */}
+      {actionFeedback && (
+        <div className={`p-3.5 rounded-xl border text-xs flex items-center justify-between animate-fadeIn ${
+          actionFeedback.type === 'grant'
+            ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
+            : 'bg-rose-950/80 border-rose-500/50 text-rose-300'
+        }`}>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{actionFeedback.message}</span>
+          </div>
+          <button onClick={() => setActionFeedback(null)} className="text-slate-400 hover:text-white font-bold ml-2">✕</button>
+        </div>
+      )}
 
       {/* Header */}
       <div className="glass-card p-5 border-l-4 border-l-purple-500">
@@ -93,7 +115,7 @@ export const ConsentManager: React.FC<ConsentManagerProps> = ({ consents, onGran
 
               {c.status === 'ACTIVE' && (
                 <button
-                  onClick={() => onRevokeConsent(c.consentHandle)}
+                  onClick={() => handleRevoke(c.consentHandle)}
                   className="px-2.5 py-1 bg-rose-500/15 hover:bg-rose-500/30 text-rose-400 rounded-lg text-xs font-semibold border border-rose-500/30 transition-all flex items-center gap-1 shrink-0"
                   title="Revoke consent immediately"
                 >

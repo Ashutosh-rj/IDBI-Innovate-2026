@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { MsmeProfile } from '../types';
-import { Sliders, Zap, ShieldCheck, RotateCcw } from 'lucide-react';
+import { Sliders, Zap, ShieldCheck, RotateCcw, ArrowLeft } from 'lucide-react';
 import { simulateWhatIfLive } from '../services/apiClient';
 
 interface WhatIfSimulatorProps {
@@ -8,7 +8,7 @@ interface WhatIfSimulatorProps {
   onClose?: () => void;
 }
 
-export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme }) => {
+export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose }) => {
   const [gstr3b, setGstr3b] = useState<number>(msme.keyMetrics.gstr3bRegularity * 100);
   const [odUtil, setOdUtil] = useState<number>(msme.keyMetrics.odUtilization * 100);
   const [bounces, setBounces] = useState<number>(msme.keyMetrics.chequeBounces);
@@ -77,19 +77,34 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme }) => {
               <Sliders className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">Interactive What-If AI Simulator</h3>
+              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                Interactive What-If AI Simulator
+                {isSimulating && (
+                  <span className="w-4 h-4 border-2 border-idbi-cyan border-t-transparent rounded-full animate-spin inline-block" title="Recalculating score via TreeSHAP..." />
+                )}
+              </h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 Simulate alternate data feature modifications for <strong className="text-white">{msme.businessName}</strong>
               </p>
             </div>
           </div>
         </div>
-        <button
-          onClick={resetSliders}
-          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
-        >
-          <RotateCcw className="w-3.5 h-3.5" /> Reset Sliders
-        </button>
+        <div className="flex items-center gap-2">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" /> Back
+            </button>
+          )}
+          <button
+            onClick={resetSliders}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Reset Sliders
+          </button>
+        </div>
       </div>
 
       {/* Score Comparison Box */}

@@ -1,10 +1,21 @@
+# syntax=docker/dockerfile:1
 FROM python:3.11-slim
 WORKDIR /app
+
+# Copy requirements first to leverage Docker layer caching when application code changes
+COPY data-generators/sgsdg/requirements.txt /app/data-generators/sgsdg/requirements.txt
+COPY services/scoring-engine/requirements.txt /app/services/scoring-engine/requirements.txt
+
+# Install dependencies with BuildKit cache mount and resilient network timeout/retry flags
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --default-timeout=100 --retries 10 --prefer-binary \
+    -r /app/data-generators/sgsdg/requirements.txt \
+    -r /app/services/scoring-engine/requirements.txt
+
+# Copy application source code after dependency installation
 COPY data-generators/sgsdg /app/data-generators/sgsdg
 COPY services/scoring-engine /app/services/scoring-engine
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /app/data-generators/sgsdg/requirements.txt && \
-    pip install --no-cache-dir -r /app/services/scoring-engine/requirements.txt
+
 WORKDIR /app/services/scoring-engine
 EXPOSE 8000
 ENV PYTHONPATH=/app/data-generators/sgsdg:/app/services/scoring-engine:/app/services/scoring-engine/app

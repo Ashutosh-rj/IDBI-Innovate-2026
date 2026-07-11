@@ -165,13 +165,8 @@ class HealthScorer:
         else:
             # Heuristic fallback if model not trained yet (weighted sum of sub-scores)
             subs = sub_scores
-            composite = (
-                subs["taxComplianceScore"] * 0.30 +
-                subs["cashFlowVelocityScore"] * 0.25 +
-                subs["payrollStabilityScore"] * 0.15 +
-                subs["businessVintageScore"] * 0.15 +
-                subs["liquidityBufferScore"] * 0.15
-            )
+            weights = policy_engine.get_weights()
+            composite = sum(subs[k] * weights.get(k, 0.2) for k in subs)
             prob_default = round(max(0.05, min(0.95, 1.0 - (composite / 100.0))), 4)
             scaled_score = int(settings.SCORE_MIN + (composite / 100.0) * (settings.SCORE_MAX - settings.SCORE_MIN))
             top_reasons = []
@@ -257,13 +252,19 @@ class HealthScorer:
         }
 
 
+    def _clamp_and_round_subscore(self, score: float) -> float:
+        """Helper to ensure sub-scores stay within valid [0.0, 100.0] range and rounded to 1 decimal place."""
+        if math.isnan(score) or score is None:
+            return 50.0
+        return round(min(100.0, max(0.0, float(score))), 1)
+
     def _calc_subscore_gst(self, f: Dict[str, float]) -> float:
         reg = f.get("gst_filing_regularity")
         if math.isnan(reg): return 50.0 # Neutral NTC default
         score = reg * 80.0
         if f.get("gst_turnover_yoy_growth", 0.0) > 0: score += 10.0
         if f.get("gst_itc_mismatch_flag", 0.0) == 0.0: score += 10.0
-        return round(min(100.0, max(0.0, score)), 1)
+        return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_cf(self, f: Dict[str, float]) -> float:
         vol = f.get("upi_monthly_volume_avg")
@@ -273,7 +274,7 @@ class HealthScorer:
         if ratio > 1.1: score += 25.0
         elif ratio > 0.95: score += 15.0
         if f.get("upi_unique_payers_avg", 0.0) > 20: score += 15.0
-        return round(min(100.0, max(0.0, score)), 1)
+        return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_pay(self, f: Dict[str, float]) -> float:
         cov = f.get("epfo_covered_flag")
@@ -281,7 +282,7 @@ class HealthScorer:
         reg = f.get("epfo_contribution_regularity", 0.0)
         score = reg * 85.0
         if f.get("epfo_member_growth_rate", 0.0) >= 0: score += 15.0
-        return round(min(100.0, max(0.0, score)), 1)
+        return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_dig(self, f: Dict[str, float]) -> float:
         vint = f.get("udyam_vintage_months", 12.0)
@@ -289,7 +290,7 @@ class HealthScorer:
         score = min(60.0, (vint / 36.0) * 60.0)
         if f.get("pan_gstin_match_flag", 0.0) == 1.0: score += 20.0
         if f.get("linked_account_count", 0.0) > 0: score += 20.0
-        return round(min(100.0, max(0.0, score)), 1)
+        return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_cr(self, f: Dict[str, float]) -> float:
         if f.get("ntc_thin_file_flag", 0.0) == 1.0: return 65.0 # NTC thin-file baseline
@@ -298,7 +299,7 @@ class HealthScorer:
         else: score -= 30.0
         od_util = f.get("aa_od_limit_utilization", 0.0)
         if od_util < 0.7: score += 10.0
-        return round(min(100.0, max(0.0, score)), 1)
+        return self._clamp_and_round_subscore(score)
 
     def _get_risk_tier(self, score: int, is_ntc: bool):
         return policy_engine.get_risk_tier(score, is_ntc)

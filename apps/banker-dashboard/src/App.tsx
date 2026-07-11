@@ -4,6 +4,9 @@ import { PortfolioOverview } from './components/PortfolioOverview';
 import { MsmeTable } from './components/MsmeTable';
 import { ScorecardView } from './components/ScorecardView';
 import { WhatIfSimulator } from './components/WhatIfSimulator';
+import { ArchitectureDiagram } from './components/ArchitectureDiagram';
+import { RBIAuditPanel } from './components/RBIAuditPanel';
+import { CreditJourney } from './components/CreditJourney';
 import { MOCK_COHORT } from './data/mockCohort';
 import type { MsmeProfile } from './types';
 import { ShieldCheck, AlertCircle } from 'lucide-react';
@@ -12,7 +15,7 @@ import { fetchLiveCohort } from './services/apiClient';
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [selectedMsme, setSelectedMsme] = useState<MsmeProfile | null>(null);
-  const [isLiveApi, setIsLiveApi] = useState<boolean>(false);
+  const [isLiveApi, setIsLiveApi] = useState<boolean>(true);
   const [cohortData, setCohortData] = useState<MsmeProfile[]>(MOCK_COHORT);
   const [isLoadingLive, setIsLoadingLive] = useState<boolean>(false);
   const [liveError, setLiveError] = useState<string | null>(null);
@@ -132,6 +135,18 @@ export default function App() {
                 msme={selectedMsme || cohortData[0]}
                 onClose={() => setActiveTab('directory')}
               />
+            )}
+
+            {activeTab === 'architecture' && (
+              <ArchitectureDiagram isLiveApi={isLiveApi} />
+            )}
+
+            {activeTab === 'audit' && (
+              <RBIAuditPanel cohort={cohortData} />
+            )}
+
+            {activeTab === 'journey' && (
+              <CreditJourney />
             )}
           </>
         )}

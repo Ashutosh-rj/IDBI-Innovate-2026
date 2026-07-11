@@ -27,3 +27,9 @@
     @apply w-full py-3 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 font-semibold rounded-xl border border-slate-700/60 transition-all duration-200 flex items-center justify-center gap-2;
   }
 }
+
+@layer utilities {
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+}

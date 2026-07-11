@@ -33,16 +33,26 @@ public class RebitConsentService {
     private final Map<String, PrivateKey> ephemeralKeyStore = new ConcurrentHashMap<>();
     private KeyPair serviceSigningKeyPair;
 
+    @Value("${msme.adapter.jws-private-key-pkcs8:}")
+    private String servicePrivateKeyPem;
+
     @PostConstruct
     public void initCrypto() {
         try {
             if (Security.getProvider("BC") == null) {
                 Security.addProvider(new BouncyCastleProvider());
             }
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048);
-            this.serviceSigningKeyPair = kpg.generateKeyPair();
-            log.info("Initialized auto-generated RSA-2048 signing key pair for ReBIT AA JWS detached signatures (AUDIT-T0-4).");
+            if (servicePrivateKeyPem != null && !servicePrivateKeyPem.trim().isEmpty()) {
+                byte[] keyBytes = Base64.getDecoder().decode(servicePrivateKeyPem.trim());
+                PrivateKey privateKey = KeyFactory.getInstance("RSA").generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(keyBytes));
+                this.serviceSigningKeyPair = new KeyPair(null, privateKey);
+                log.info("Initialized persistent RSA signing key from injected PKCS8 specification (AUDIT-T0-4).");
+            } else {
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+                kpg.initialize(2048);
+                this.serviceSigningKeyPair = kpg.generateKeyPair();
+                log.info("Initialized auto-generated RSA-2048 signing key pair for ReBIT AA JWS detached signatures (AUDIT-T0-4).");
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Failed to initialize cryptographic keys", e);
         }
@@ -171,6 +181,10 @@ public class RebitConsentService {
         String jwsSignature = generateJwsDetachedSignature(fiRequestPayload);
 
         updated.setEphemeralX25519PublicKey(x25519PubKey);
+        PrivateKey privKey = ephemeralKeyStore.get(consentHandle);
+        if (privKey != null) {
+            updated.setEphemeralPrivateKeyBase64(Base64.getEncoder().encodeToString(privKey.getEncoded()));
+        }
         updated.setJwsDetachedSignature(jwsSignature);
 
         if ("SANDBOX".equalsIgnoreCase(adapterMode)) {
@@ -214,5 +228,27 @@ public class RebitConsentService {
 
     public Optional<ConsentLedgerEntity> getConsentByHandle(String handle) {
         return repository.findByConsentHandle(handle);
+    }
+
+    public PrivateKey getEphemeralPrivateKey(String consentHandle) {
+        PrivateKey key = ephemeralKeyStore.get(consentHandle);
+        if (key != null) return key;
+        return repository.findByConsentHandle(consentHandle)
+                .map(ConsentLedgerEntity::getEphemeralPrivateKeyBase64)
+                .filter(b64 -> b64 != null && !b64.isEmpty())
+                .map(b64 -> {
+                    try {
+                        if (Security.getProvider("BC") == null) {
+                            Security.addProvider(new BouncyCastleProvider());
+                        }
+                        KeyFactory kf = KeyFactory.getInstance("X25519");
+                        PrivateKey rehydrated = kf.generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(Base64.getDecoder().decode(b64)));
+                        ephemeralKeyStore.put(consentHandle, rehydrated);
+                        return rehydrated;
+                    } catch (Exception e) {
+                        log.error("Failed to rehydrate X25519 private key from DB for handle [{}]: {}", consentHandle, e.getMessage());
+                        return null;
+                    }
+                }).orElse(null);
     }
 }

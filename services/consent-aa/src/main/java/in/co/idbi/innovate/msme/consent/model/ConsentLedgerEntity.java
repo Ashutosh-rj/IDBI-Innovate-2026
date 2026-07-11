@@ -57,6 +57,9 @@ public class ConsentLedgerEntity {
     @Column(length = 64)
     private String previousHash;
 
+    @Column(name = "ephemeral_private_key_b64", length = 2000)
+    private String ephemeralPrivateKeyBase64;
+
     @Transient
     private String ephemeralX25519PublicKey;
 

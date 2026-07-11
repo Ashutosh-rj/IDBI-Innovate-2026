@@ -1,12 +1,21 @@
+# syntax=docker/dockerfile:1
 FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
+
+# Copy ONLY pom.xml files first to cache dependency downloads across all Spring services
 COPY pom.xml .
-COPY api-gateway api-gateway
-COPY consent-aa consent-aa
-COPY ingestion ingestion
-COPY msme-registry msme-registry
-COPY health-card health-card
-RUN --mount=type=cache,target=/root/.m2/repository mvn clean package -pl health-card -am -DskipTests --no-transfer-progress -Dmaven.resolver.transport=wagon -Dmaven.wagon.http.retryHandler.count=3
+COPY api-gateway/pom.xml api-gateway/pom.xml
+COPY consent-aa/pom.xml consent-aa/pom.xml
+COPY health-card/pom.xml health-card/pom.xml
+COPY ingestion/pom.xml ingestion/pom.xml
+COPY msme-registry/pom.xml msme-registry/pom.xml
+
+# Pre-fetch plugins and dependencies in parallel (-T 1C)
+RUN --mount=type=cache,target=/root/.m2/repository mvn dependency:go-offline -B -T 1C --no-transfer-progress || true
+
+# Copy ONLY health-card source code and compile in parallel
+COPY health-card/src health-card/src
+RUN --mount=type=cache,target=/root/.m2/repository mvn package -pl health-card -am -DskipTests -T 1C --no-transfer-progress -Dmaven.javadoc.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

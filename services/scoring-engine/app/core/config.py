@@ -24,10 +24,10 @@ class Settings(BaseSettings):
     KAFKA_CONSUMER_GROUP_ID: str = "msme-scoring-engine-group"
     
     # ML Model Paths
-    MODEL_ARTIFACT_PATH: str = os.path.join(
+    MODEL_ARTIFACT_PATH: str = os.getenv("MODEL_PATH", os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "ml", "artifacts", "model.pkl"
-    )
+    ))
     MODEL_TYPE_DEFAULT: str = "xgboost" # xgboost or lightgbm
     RISK_POLICY_PATH: str = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),

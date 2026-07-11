@@ -37,6 +37,12 @@ public class OcenUliAdapter {
     @Value("${ocen.adapter.lsp-id:LSP-IDBI-INNOVATE-001}")
     private String lspId;
 
+    @Value("${ocen.lsp.private-key-pkcs8:}")
+    private String privateKeyPem;
+
+    @Value("${ocen.lsp.public-key-pem:}")
+    private String publicKeyPem;
+
     @Getter
     private KeyPair lspSigningKeyPair;
     private RestClient restClient;
@@ -45,10 +51,22 @@ public class OcenUliAdapter {
     public void init() {
         this.restClient = RestClient.create();
         try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048);
-            this.lspSigningKeyPair = kpg.generateKeyPair();
-            log.info("Initialized auto-generated RSA-2048 signing key pair for OCEN 4.0 LSP payload signing (AUDIT-T0-6, AUDIT-T1-3).");
+            if (privateKeyPem != null && !privateKeyPem.trim().isEmpty()) {
+                byte[] privBytes = Base64.getDecoder().decode(privateKeyPem.trim());
+                java.security.PrivateKey privKey = java.security.KeyFactory.getInstance("RSA").generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(privBytes));
+                java.security.PublicKey pubKey = null;
+                if (publicKeyPem != null && !publicKeyPem.trim().isEmpty()) {
+                    byte[] pubBytes = Base64.getDecoder().decode(publicKeyPem.trim());
+                    pubKey = java.security.KeyFactory.getInstance("RSA").generatePublic(new java.security.spec.X509EncodedKeySpec(pubBytes));
+                }
+                this.lspSigningKeyPair = new KeyPair(pubKey, privKey);
+                log.info("Initialized persistent RSA-2048 signing key pair from injected external configuration (AUDIT-T0-6, AUDIT-T1-3).");
+            } else {
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+                kpg.initialize(2048);
+                this.lspSigningKeyPair = kpg.generateKeyPair();
+                log.info("Initialized auto-generated RSA-2048 signing key pair for OCEN 4.0 LSP payload signing (AUDIT-T0-6, AUDIT-T1-3).");
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Failed to initialize RSA key pair for OCEN adapter", e);
         }

@@ -56,14 +56,6 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             log.warn("Missing or invalid Authorization header for path: [{}]", path);
-            if (env != null && Arrays.asList(env.getActiveProfiles()).contains("dev-bypass")) {
-                log.warn("DEV-BYPASS active: Injecting fallback GUEST-DEMO header for path [{}]", path);
-                ServerHttpRequest mutated = exchange.getRequest().mutate()
-                        .header("X-User-Id", "GUEST-DEMO")
-                        .header("X-User-Role", "BANK_OFFICER")
-                        .build();
-                return chain.filter(exchange.mutate().request(mutated).build());
-            }
             return onError(exchange, HttpStatus.UNAUTHORIZED);
         }
 

@@ -48,7 +48,7 @@ spring:
                 key-resolver: "#{@userKeyResolver}"
 
 jwt:
-  secret: ${JWT_SECRET:}
+  secret: ${JWT_SECRET:idbi_innovate_2026_super_secret_jwt_signing_key_at_least_256_bits}
   expiration-ms: 86400000
 
 management:

@@ -1,4 +1,6 @@
 import time
+import asyncio
+import json
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
@@ -36,10 +38,102 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting MSME ML Scoring Engine...", version=settings.VERSION, mode=settings.ADAPTER_MODE)
+    asyncio.create_task(run_kafka_consumer_loop())
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Shutting down MSME ML Scoring Engine...")
+
+async def run_kafka_consumer_loop():
+    """
+    Background asynchronous loop consuming raw alternate data events from Kafka,
+    computing scores, publishing to score-computed-events, and routing poisoned payloads
+    to a Dead Letter Queue (.DLQ) per AUDIT-T0-3.
+    """
+    if not settings.KAFKA_BOOTSTRAP_SERVERS:
+        logger.info("Kafka bootstrap servers not configured, skipping consumer loop.")
+        return
+
+    try:
+        from confluent_kafka import Consumer, Producer
+    except ImportError:
+        logger.warning("confluent_kafka not installed, skipping Kafka consumer loop.")
+        return
+
+    conf = {
+        'bootstrap.servers': settings.KAFKA_BOOTSTRAP_SERVERS,
+        'group.id': settings.KAFKA_CONSUMER_GROUP_ID,
+        'auto.offset.reset': 'earliest',
+        'enable.auto.commit': False
+    }
+    dlq_topic = f"{settings.KAFKA_TOPIC_RAW_ALT_DATA}.DLQ"
+
+    consumer = None
+    producer = None
+    try:
+        consumer = Consumer(conf)
+        producer = Producer({'bootstrap.servers': settings.KAFKA_BOOTSTRAP_SERVERS})
+        consumer.subscribe([settings.KAFKA_TOPIC_RAW_ALT_DATA])
+        logger.info("Subscribed to Kafka topic", topic=settings.KAFKA_TOPIC_RAW_ALT_DATA, dlq_topic=dlq_topic)
+    except Exception as e:
+        logger.warning("Failed to connect to Kafka at startup, consumer loop disabled", error=str(e))
+        return
+
+    while True:
+        try:
+            msg = await asyncio.get_event_loop().run_in_executor(None, consumer.poll, 1.0)
+            if msg is None:
+                await asyncio.sleep(0.1)
+                continue
+            if msg.error():
+                logger.error("Kafka consumer error", error=str(msg.error()))
+                continue
+
+            payload_str = msg.value().decode('utf-8')
+            retry_count = 0
+            max_retries = 3
+            success = False
+
+            while retry_count < max_retries and not success:
+                try:
+                    payload = json.loads(payload_str)
+                    from api.routes.score import scorer
+                    result = scorer.compute_score(payload)
+                    producer.produce(
+                        settings.KAFKA_TOPIC_SCORE_COMPUTED,
+                        key=msg.key(),
+                        value=json.dumps(result).encode('utf-8')
+                    )
+                    producer.flush(timeout=1.0)
+                    consumer.commit(msg, asynchronous=False)
+                    success = True
+                except Exception as ex:
+                    retry_count += 1
+                    logger.warning(f"Error processing Kafka event (attempt {retry_count}/{max_retries})", error=str(ex))
+                    if retry_count < max_retries:
+                        await asyncio.sleep(2.0 ** retry_count)
+
+            if not success:
+                logger.error("Message processing exhausted retries. Forwarding to Dead Letter Queue (.DLQ)", dlq_topic=dlq_topic)
+                try:
+                    producer.produce(
+                        dlq_topic,
+                        key=msg.key(),
+                        value=msg.value()
+                    )
+                    producer.flush(timeout=1.0)
+                    consumer.commit(msg, asynchronous=False)
+                except Exception as dlq_err:
+                    logger.error("Failed to forward message to DLQ", error=str(dlq_err))
+        except asyncio.CancelledError:
+            logger.info("Kafka consumer loop cancelled.")
+            break
+        except Exception as loop_err:
+            logger.error("Unexpected error in Kafka consumer loop", error=str(loop_err))
+            await asyncio.sleep(5.0)
+
+    if consumer:
+        consumer.close()
 
 @app.get("/health", tags=["System"])
 async def health_check():

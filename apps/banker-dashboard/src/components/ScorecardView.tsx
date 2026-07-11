@@ -39,10 +39,10 @@ export const ScorecardView: React.FC<ScorecardViewProps> = ({ msme, onBack, onSi
             <Zap className="w-4 h-4" /> Run What-If Simulation
           </button>
           <button
-            onClick={() => alert(`Exporting audit-grade PDF scorecard for ${msme.businessName}...`)}
+            onClick={() => window.print()}
             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 flex items-center gap-2 transition-all"
           >
-            <Download className="w-4 h-4" /> Export Scorecard PDF
+            <Download className="w-4 h-4" /> Print / Save Scorecard PDF
           </button>
         </div>
       </div>
@@ -85,8 +85,13 @@ export const ScorecardView: React.FC<ScorecardViewProps> = ({ msme, onBack, onSi
                 </span>
                 <span className="text-sm font-semibold text-slate-500">/ 900</span>
               </div>
-              <p className="text-[11px] text-emerald-400 mt-1 font-medium flex items-center justify-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5" /> Top 15% in {msme.sector}
+              <p className={`text-[11px] ${msme.healthScore >= 700 ? 'text-emerald-400' : msme.healthScore >= 600 ? 'text-amber-400' : 'text-rose-400'} mt-1 font-medium flex items-center justify-center gap-1`}>
+                <TrendingUp className="w-3.5 h-3.5" /> {
+                  msme.healthScore >= 750 ? `Top 10% in ${msme.sector}` :
+                  msme.healthScore >= 700 ? `Top 20% in ${msme.sector}` :
+                  msme.healthScore >= 640 ? `Top 40% in ${msme.sector}` :
+                  `Bottom 35% in ${msme.sector}`
+                }
               </p>
             </div>
 
