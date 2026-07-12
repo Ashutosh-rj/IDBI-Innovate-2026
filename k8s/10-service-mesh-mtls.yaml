@@ -30,14 +30,84 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-api-gateway-to-services
+  name: allow-api-gateway-to-msme-registry
   namespace: msme-health-platform
 spec:
   selector:
-    matchExpressions:
-      - key: app
-        operator: In
-        values: ["msme-registry", "consent-aa", "ingestion", "health-card", "scoring-engine"]
+    matchLabels:
+      app: msme-registry
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/msme-health-platform/sa/api-gateway-sa"]
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-consent-aa
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchLabels:
+      app: consent-aa
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/msme-health-platform/sa/api-gateway-sa"]
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-ingestion
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchLabels:
+      app: ingestion
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/msme-health-platform/sa/api-gateway-sa"]
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-health-card
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchLabels:
+      app: health-card
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["cluster.local/ns/msme-health-platform/sa/api-gateway-sa"]
+      to:
+        - operation:
+            methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-api-gateway-to-scoring-engine
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchLabels:
+      app: scoring-engine
   action: ALLOW
   rules:
     - from:
@@ -52,14 +122,54 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: allow-backend-to-data-layer
+  name: allow-backend-to-postgres
   namespace: msme-health-platform
 spec:
   selector:
-    matchExpressions:
-      - key: app
-        operator: In
-        values: ["postgres", "redis", "kafka"]
+    matchLabels:
+      app: postgres
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/msme-health-platform/sa/msme-registry-sa"
+              - "cluster.local/ns/msme-health-platform/sa/consent-aa-sa"
+              - "cluster.local/ns/msme-health-platform/sa/ingestion-sa"
+              - "cluster.local/ns/msme-health-platform/sa/health-card-sa"
+              - "cluster.local/ns/msme-health-platform/sa/scoring-engine-sa"
+              - "cluster.local/ns/msme-health-platform/sa/api-gateway-sa"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-backend-to-redis
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/msme-health-platform/sa/msme-registry-sa"
+              - "cluster.local/ns/msme-health-platform/sa/consent-aa-sa"
+              - "cluster.local/ns/msme-health-platform/sa/ingestion-sa"
+              - "cluster.local/ns/msme-health-platform/sa/health-card-sa"
+              - "cluster.local/ns/msme-health-platform/sa/scoring-engine-sa"
+              - "cluster.local/ns/msme-health-platform/sa/api-gateway-sa"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-backend-to-kafka
+  namespace: msme-health-platform
+spec:
+  selector:
+    matchLabels:
+      app: kafka
   action: ALLOW
   rules:
     - from:
