@@ -51,29 +51,29 @@ class RiskPolicyEngine:
                     "name": "PRIME_LOW_RISK",
                     "minScore": 750,
                     "maxScore": 1000,
-                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 5000000.0, "recommendedInterestRatePa": 10.5},
-                    "ntcThinFileRules": {"isEligible": True, "maxLoanAmountInr": 5000000.0, "recommendedInterestRatePa": 10.5}
+                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 5000000.0, "recommendedInterestRatePa": 10.5, "maxTenureMonths": 36},
+                    "ntcThinFileRules": {"isEligible": True, "maxLoanAmountInr": 5000000.0, "recommendedInterestRatePa": 10.5, "maxTenureMonths": 36}
                 },
                 {
                     "name": "STANDARD_MODERATE_RISK",
                     "minScore": 650,
                     "maxScore": 749,
-                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 2500000.0, "recommendedInterestRatePa": 12.5},
-                    "ntcThinFileRules": {"isEligible": True, "maxLoanAmountInr": 2500000.0, "recommendedInterestRatePa": 12.5}
+                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 2500000.0, "recommendedInterestRatePa": 12.5, "maxTenureMonths": 24},
+                    "ntcThinFileRules": {"isEligible": True, "maxLoanAmountInr": 2500000.0, "recommendedInterestRatePa": 12.5, "maxTenureMonths": 24}
                 },
                 {
                     "name": "SUBPRIME_HIGH_RISK",
                     "minScore": 550,
                     "maxScore": 649,
-                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 1000000.0, "recommendedInterestRatePa": 15.0},
-                    "ntcThinFileRules": {"isEligible": True, "maxLoanAmountInr": 1000000.0, "recommendedInterestRatePa": 15.0}
+                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 1000000.0, "recommendedInterestRatePa": 15.0, "maxTenureMonths": 12},
+                    "ntcThinFileRules": {"isEligible": True, "maxLoanAmountInr": 1000000.0, "recommendedInterestRatePa": 15.0, "maxTenureMonths": 12}
                 },
                 {
                     "name": "HIGH_RISK_REJECT",
                     "minScore": 0,
                     "maxScore": 549,
-                    "ocenEligibility": {"isEligible": False, "maxLoanAmountInr": 0.0, "recommendedInterestRatePa": 0.0},
-                    "ntcThinFileRules": {"isEligible": False, "maxLoanAmountInr": 0.0, "recommendedInterestRatePa": 0.0}
+                    "ocenEligibility": {"isEligible": False, "maxLoanAmountInr": 0.0, "recommendedInterestRatePa": 0.0, "maxTenureMonths": 0},
+                    "ntcThinFileRules": {"isEligible": False, "maxLoanAmountInr": 0.0, "recommendedInterestRatePa": 0.0, "maxTenureMonths": 0}
                 }
             ],
             "subscoreWeights": {
@@ -112,6 +112,20 @@ class RiskPolicyEngine:
                     "odUtilWeight": 0.50,
                     "bounceWeight": 30.0,
                     "epfWeight": 0.30
+                },
+                "reconciliationWeights": {
+                    "heuristicBlend": 0.50,
+                    "shapBlend": 0.50,
+                    "shapToScoreScale": 33.33
+                },
+                "fraudThresholds": {
+                    "vintageHighClaimMonths": 36.0,
+                    "minActiveGstFilings": 3
+                },
+                "fallbackScoreDefaults": {
+                    "defaultHealthScore": 700,
+                    "defaultRiskBand": "MODERATE_RISK",
+                    "defaultDefaultProbability": 0.05
                 }
             }
         }
@@ -144,10 +158,10 @@ class RiskPolicyEngine:
             return default_sw
         return sw
 
-    def get_risk_tier(self, score: int, is_ntc: bool) -> Tuple[str, bool, float, float]:
+    def get_risk_tier(self, score: int, is_ntc: bool) -> Tuple[str, bool, float, float, int]:
         """
         Evaluates the MSME financial health score against the external rules layer.
-        Returns: (risk_band_name, is_eligible, max_loan_amount_inr, recommended_interest_rate_pa)
+        Returns: (risk_band_name, is_eligible, max_loan_amount_inr, recommended_interest_rate_pa, max_tenure_months)
         """
         policy = self._load_policy()
         bands = policy.get("riskBands", [])
@@ -165,9 +179,10 @@ class RiskPolicyEngine:
                 is_eligible = bool(rules.get("isEligible", False))
                 max_loan = float(rules.get("maxLoanAmountInr", 0.0))
                 int_rate = float(rules.get("recommendedInterestRatePa", 0.0))
-                return name, is_eligible, max_loan, int_rate
+                max_tenure = int(rules.get("maxTenureMonths", 36 if is_eligible else 0))
+                return name, is_eligible, max_loan, int_rate, max_tenure
 
         # Fallback if score is outside defined bands
-        return "HIGH_RISK_REJECT", False, 0.0, 0.0
+        return "HIGH_RISK_REJECT", False, 0.0, 0.0, 0
 
 policy_engine = RiskPolicyEngine()

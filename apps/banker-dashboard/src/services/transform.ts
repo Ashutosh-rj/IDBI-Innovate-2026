@@ -95,5 +95,6 @@ export function transformScoringResponse(
       verificationStatus: apiResp.ocenEligibility.isEligible ? "VERIFIED_ELIGIBLE" : "INELIGIBLE_RISK"
     } : baseProfile?.ocenLspPayload,
     keyMetrics: deriveKeyMetrics(apiResp, baseProfile),
+    simulationCoefficients: apiResp.simulationCoefficients || baseProfile?.simulationCoefficients,
   };
 }

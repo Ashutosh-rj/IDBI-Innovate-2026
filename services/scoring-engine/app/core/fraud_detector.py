@@ -1,6 +1,7 @@
 from datetime import datetime, date
 from typing import Dict, Any, List
 import structlog
+from .policy_engine import policy_engine
 
 logger = structlog.get_logger()
 
@@ -21,14 +22,16 @@ class FraudDetector:
 
         fraud_flags: List[str] = []
         profile = raw_payload.get("profile", {})
-        
-        pan = profile.get("pan", "")
-        gstin = profile.get("gstin", "")
+        if not profile:
+            return {"isFraudDetected": False, "riskLevel": "LOW_NORMAL", "fraudFlags": [], "checkedAt": datetime.now().isoformat()}
+
+        pan = str(profile.get("pan", "")).strip().upper()
+        gstin = str(profile.get("gstin", "")).strip().upper()
         
         if not gstin:
-            gst_filings = raw_payload.get("gstFilings", [])
-            if gst_filings and isinstance(gst_filings, list) and len(gst_filings) > 0:
-                gstin = gst_filings[0].get("gstin", "")
+            filings = raw_payload.get("gstFilings", [])
+            if filings and isinstance(filings, list) and filings[0].get("gstin"):
+                gstin = str(filings[0].get("gstin", "")).strip().upper()
                 
         if not pan and gstin and len(gstin) == 15:
             pan = gstin[2:12]
@@ -36,7 +39,7 @@ class FraudDetector:
         # 1. PAN vs GSTIN Mismatch
         if gstin and len(gstin) == 15 and pan and len(pan) == 10:
             embedded_pan = gstin[2:12]
-            if embedded_pan.upper() != pan.upper():
+            if embedded_pan != pan:
                 logger.warn("FRAUD DETECTED: PAN does not match embedded GSTIN PAN", pan=pan, gstin=gstin)
                 fraud_flags.append("PAN_GSTIN_MISMATCH")
         elif gstin and len(gstin) != 15:
@@ -50,7 +53,11 @@ class FraudDetector:
                 vintage_months = max(1.0, float((date.today() - reg_date).days / 30.44))
                 
                 gst_filings = raw_payload.get("gstFilings", [])
-                if vintage_months > 36.0 and (not gst_filings or len(gst_filings) < 3):
+                sw = policy_engine.get_scoring_weights()
+                ft = sw.get("fraudThresholds", {})
+                max_claim_months = float(ft.get("vintageHighClaimMonths", 36.0))
+                min_filings = int(ft.get("minActiveGstFilings", 3))
+                if vintage_months > max_claim_months and (not gst_filings or len(gst_filings) < min_filings):
                     logger.warn("FRAUD DETECTED: High Udyam vintage claim with minimal/no GST filing history", vintage_months=vintage_months)
                     fraud_flags.append("VINTAGE_MISMATCH_HIGH_CLAIM_LOW_ACTIVITY")
                 

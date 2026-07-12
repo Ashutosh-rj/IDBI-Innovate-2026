@@ -180,7 +180,7 @@ class HealthScorer:
             }
 
         # Assign Risk Band & OCEN Loan Eligibility
-        risk_band, eligible, max_loan, int_rate = self._get_risk_tier(scaled_score, is_ntc_thin_file)
+        risk_band, eligible, max_loan, int_rate, max_tenure = self._get_risk_tier(scaled_score, is_ntc_thin_file)
         
         return {
             "msmeId": msme_id,
@@ -197,7 +197,7 @@ class HealthScorer:
                 "isEligible": eligible,
                 "maxLoanAmountInr": max_loan,
                 "recommendedInterestRatePa": int_rate,
-                "maxTenureMonths": 36 if eligible else 0
+                "maxTenureMonths": max_tenure
             }
         }
 
@@ -206,6 +206,12 @@ class HealthScorer:
         Reconciles domain sub-scores with exact TreeSHAP domain contribution sums (AUDIT-T2-1).
         Guarantees sub-score directionality matches empirical ML risk attributions.
         """
+        sw = policy_engine.get_scoring_weights()
+        rw = sw.get("reconciliationWeights", {})
+        scale_factor = float(rw.get("shapToScoreScale", 33.33))
+        heur_blend = float(rw.get("heuristicBlend", 0.50))
+        shap_blend = float(rw.get("shapBlend", 0.50))
+
         domain_feature_map = {
             "taxCompliance": [f for f in self.feature_names if f.startswith("gst_")],
             "cashFlowVelocity": [f for f in self.feature_names if f.startswith("upi_")],
@@ -233,8 +239,8 @@ class HealthScorer:
             heur_score = heur_sub_scores[sub_key]
             # Map SHAP domain sum (typically -1.5 to +1.5 logit) to 0-100 score scale
             # Positive SHAP = higher default risk = lower health score
-            shap_derived = round(min(100.0, max(0.0, 50.0 - (dom_shap_sum * 33.33))), 1)
-            reconciled = round(0.5 * heur_score + 0.5 * shap_derived, 1)
+            shap_derived = round(min(100.0, max(0.0, 50.0 - (dom_shap_sum * scale_factor))), 1)
+            reconciled = round(heur_blend * heur_score + shap_blend * shap_derived, 1)
             
             reconciled_sub_scores[sub_key] = reconciled
             domain_reconciliation[dom_key] = {

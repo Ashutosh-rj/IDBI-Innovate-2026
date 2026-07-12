@@ -23,6 +23,21 @@ public class ScoreComputedConsumer {
     private final OcenUliAdapter ocenAdapter;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.score:650}")
+    private int defaultScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.risk-band:MODERATE_RISK}")
+    private String defaultRiskBand;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.pd:0.05}")
+    private double defaultPd;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.subscore:70.0}")
+    private double defaultSubScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.dq-score:80.0}")
+    private double defaultDqScore;
+
     @KafkaListener(topics = "${msme.kafka.topics.score-computed:score-computed-events}", groupId = "health-card-service-group")
     @Transactional
     public void consumeScoreComputedEvent(String eventJson) {
@@ -31,18 +46,18 @@ public class ScoreComputedConsumer {
             Map<String, Object> payload = objectMapper.readValue(eventJson, new TypeReference<>() {});
             String msmeId = (String) payload.getOrDefault("msmeId", "UNKNOWN-MSME");
 
-            int score = ((Number) payload.getOrDefault("healthScore", 650)).intValue();
-            String riskBand = (String) payload.getOrDefault("riskBand", "MODERATE_RISK");
-            double pd = ((Number) payload.getOrDefault("defaultProbability12m", 0.05)).doubleValue();
+            int score = ((Number) payload.getOrDefault("healthScore", defaultScore)).intValue();
+            String riskBand = (String) payload.getOrDefault("riskBand", defaultRiskBand);
+            double pd = ((Number) payload.getOrDefault("defaultProbability12m", defaultPd)).doubleValue();
             boolean isNtc = (boolean) payload.getOrDefault("isNtcThinFile", false);
 
             Map<String, Object> subScores = (Map<String, Object>) payload.getOrDefault("subScores", Map.of());
-            double tax = ((Number) subScores.getOrDefault("taxComplianceScore", 70.0)).doubleValue();
-            double cash = ((Number) subScores.getOrDefault("cashFlowVelocityScore", 70.0)).doubleValue();
-            double pay = ((Number) subScores.getOrDefault("payrollStabilityScore", 70.0)).doubleValue();
-            double vin = ((Number) subScores.getOrDefault("businessVintageScore", 70.0)).doubleValue();
-            double liq = ((Number) subScores.getOrDefault("liquidityBufferScore", 70.0)).doubleValue();
-            double data = ((Number) subScores.getOrDefault("dataQualityScore", 80.0)).doubleValue();
+            double tax = ((Number) subScores.getOrDefault("taxComplianceScore", defaultSubScore)).doubleValue();
+            double cash = ((Number) subScores.getOrDefault("cashFlowVelocityScore", defaultSubScore)).doubleValue();
+            double pay = ((Number) subScores.getOrDefault("payrollStabilityScore", defaultSubScore)).doubleValue();
+            double vin = ((Number) subScores.getOrDefault("businessVintageScore", defaultSubScore)).doubleValue();
+            double liq = ((Number) subScores.getOrDefault("liquidityBufferScore", defaultSubScore)).doubleValue();
+            double data = ((Number) subScores.getOrDefault("dataQualityScore", defaultDqScore)).doubleValue();
 
             String reasonsJson = objectMapper.writeValueAsString(payload.getOrDefault("topReasonCodes", List.of()));
             String ocenPayloadJson = objectMapper.writeValueAsString(payload.getOrDefault("ocenLspPayload", Map.of()));

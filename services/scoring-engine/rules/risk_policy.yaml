@@ -15,10 +15,12 @@ riskBands:
       isEligible: true
       maxLoanAmountInr: 5000000.0
       recommendedInterestRatePa: 10.5
+      maxTenureMonths: 36
     ntcThinFileRules:
       isEligible: true
       maxLoanAmountInr: 5000000.0
       recommendedInterestRatePa: 10.5
+      maxTenureMonths: 36
 
   - name: "STANDARD_MODERATE_RISK"
     minScore: 650
@@ -27,10 +29,12 @@ riskBands:
       isEligible: true
       maxLoanAmountInr: 2500000.0
       recommendedInterestRatePa: 12.5
+      maxTenureMonths: 24
     ntcThinFileRules:
       isEligible: true
       maxLoanAmountInr: 2500000.0
       recommendedInterestRatePa: 12.5
+      maxTenureMonths: 24
 
   - name: "SUBPRIME_HIGH_RISK"
     minScore: 550
@@ -39,10 +43,12 @@ riskBands:
       isEligible: true
       maxLoanAmountInr: 1000000.0
       recommendedInterestRatePa: 15.0
+      maxTenureMonths: 12
     ntcThinFileRules:
       isEligible: true
       maxLoanAmountInr: 1000000.0
       recommendedInterestRatePa: 15.0
+      maxTenureMonths: 12
 
   - name: "HIGH_RISK_REJECT"
     minScore: 0
@@ -51,10 +57,12 @@ riskBands:
       isEligible: false
       maxLoanAmountInr: 0.0
       recommendedInterestRatePa: 0.0
+      maxTenureMonths: 0
     ntcThinFileRules:
       isEligible: false
       maxLoanAmountInr: 0.0
       recommendedInterestRatePa: 0.0
+      maxTenureMonths: 0
 
 subscoreWeights:
   taxComplianceScore: 0.30
@@ -91,3 +99,14 @@ scoringWeights:
     odUtilWeight: 0.50
     bounceWeight: 30.0
     epfWeight: 0.30
+  reconciliationWeights:
+    heuristicBlend: 0.50
+    shapBlend: 0.50
+    shapToScoreScale: 33.33
+  fraudThresholds:
+    vintageHighClaimMonths: 36.0
+    minActiveGstFilings: 3
+  fallbackScoreDefaults:
+    defaultHealthScore: 700
+    defaultRiskBand: "MODERATE_RISK"
+    defaultDefaultProbability: 0.05

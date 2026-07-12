@@ -11,6 +11,12 @@ import java.util.*;
 @Slf4j
 public class FraudValidationService {
 
+    @org.springframework.beans.factory.annotation.Value("${fraud.vintage.max-months:36}")
+    private long maxVintageMonths;
+
+    @org.springframework.beans.factory.annotation.Value("${fraud.vintage.min-filings:3}")
+    private int minFilings;
+
     /**
      * Executes automated fraud & anomaly detection checks on ingested alternate data (AUDIT-T3-2).
      * Checks for:
@@ -58,9 +64,9 @@ public class FraudValidationService {
                 LocalDate regDate = LocalDate.parse(regDateStr.substring(0, 10), DateTimeFormatter.ISO_LOCAL_DATE);
                 long vintageMonths = ChronoUnit.MONTHS.between(regDate, LocalDate.now());
                 
-                // If Udyam claims vintage > 36 months (3 years), but GST/banking activity shows minimal/0 filings
+                // If Udyam claims vintage > maxVintageMonths, but GST/banking activity shows minimal/0 filings
                 List<Map<String, Object>> gstFilings = (List<Map<String, Object>>) payload.get("gstFilings");
-                if (vintageMonths > 36 && (gstFilings == null || gstFilings.size() < 3)) {
+                if (vintageMonths > maxVintageMonths && (gstFilings == null || gstFilings.size() < minFilings)) {
                     log.warn("FRAUD DETECTED: Vintage mismatch. Udyam claims [{}] months vintage but minimal/no GST filing history found.", vintageMonths);
                     fraudFlags.add("VINTAGE_MISMATCH_HIGH_CLAIM_LOW_ACTIVITY");
                 }

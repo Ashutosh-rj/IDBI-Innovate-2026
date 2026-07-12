@@ -19,6 +19,33 @@ public class HealthCardController {
     private final HealthCardRepository repository;
     private final OcenUliAdapter ocenAdapter;
 
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.score:700}")
+    private int defaultScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.risk-band:MODERATE_RISK}")
+    private String defaultRiskBand;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.pd:0.05}")
+    private double defaultPd;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.tax-score:75.0}")
+    private double defaultTaxScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.cf-score:70.0}")
+    private double defaultCfScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.pay-score:65.0}")
+    private double defaultPayScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.vin-score:80.0}")
+    private double defaultVinScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.liq-score:75.0}")
+    private double defaultLiqScore;
+
+    @org.springframework.beans.factory.annotation.Value("${healthcard.default.dq-score:95.0}")
+    private double defaultDqScore;
+
     @GetMapping("/{msmeId}")
     public ResponseEntity<HealthCardEntity> getHealthCard(@PathVariable String msmeId) {
         return repository.findByMsmeId(msmeId)
@@ -47,15 +74,15 @@ public class HealthCardController {
         HealthCardEntity card = repository.findByMsmeId(msmeId).orElseGet(() -> {
             HealthCardEntity newCard = HealthCardEntity.builder()
                     .msmeId(msmeId)
-                    .healthScore(700)
-                    .riskBand("MODERATE_RISK")
-                    .defaultProbability12m(0.05)
-                    .taxComplianceScore(75.0)
-                    .cashFlowVelocityScore(70.0)
-                    .payrollStabilityScore(65.0)
-                    .businessVintageScore(80.0)
-                    .liquidityBufferScore(75.0)
-                    .dataQualityScore(95.0)
+                    .healthScore(defaultScore)
+                    .riskBand(defaultRiskBand)
+                    .defaultProbability12m(defaultPd)
+                    .taxComplianceScore(defaultTaxScore)
+                    .cashFlowVelocityScore(defaultCfScore)
+                    .payrollStabilityScore(defaultPayScore)
+                    .businessVintageScore(defaultVinScore)
+                    .liquidityBufferScore(defaultLiqScore)
+                    .dataQualityScore(defaultDqScore)
                     .isNtcThinFile(false)
                     .topReasonCodesJson("[]")
                     .ocenLspPayloadJson("{}")
