@@ -12,32 +12,36 @@ def test_risk_policy_evaluation():
     engine = RiskPolicyEngine()
     
     # Check Prime
-    band, eligible, max_loan, int_rate = engine.get_risk_tier(800, is_ntc=False)
+    band, eligible, max_loan, int_rate, max_tenure = engine.get_risk_tier(800, is_ntc=False)
     assert band == "PRIME_LOW_RISK"
     assert eligible is True
     assert max_loan == 5000000.0
     assert int_rate == 10.5
+    assert max_tenure == 36
     
     # Check Standard
-    band, eligible, max_loan, int_rate = engine.get_risk_tier(700, is_ntc=False)
+    band, eligible, max_loan, int_rate, max_tenure = engine.get_risk_tier(700, is_ntc=False)
     assert band == "STANDARD_MODERATE_RISK"
     assert eligible is True
     assert max_loan == 2500000.0
     assert int_rate == 12.5
+    assert max_tenure == 24
     
     # Check Subprime
-    band, eligible, max_loan, int_rate = engine.get_risk_tier(600, is_ntc=False)
+    band, eligible, max_loan, int_rate, max_tenure = engine.get_risk_tier(600, is_ntc=False)
     assert band == "SUBPRIME_HIGH_RISK"
     assert eligible is True
     assert max_loan == 1000000.0
     assert int_rate == 15.0
+    assert max_tenure == 12
     
     # Check Reject
-    band, eligible, max_loan, int_rate = engine.get_risk_tier(400, is_ntc=False)
+    band, eligible, max_loan, int_rate, max_tenure = engine.get_risk_tier(400, is_ntc=False)
     assert band == "HIGH_RISK_REJECT"
     assert eligible is False
     assert max_loan == 0.0
     assert int_rate == 0.0
+    assert max_tenure == 0
 
 def test_risk_policy_hot_reload():
     """
@@ -52,7 +56,7 @@ def test_risk_policy_hot_reload():
                     "name": "PRIME_LOW_RISK",
                     "minScore": 750,
                     "maxScore": 1000,
-                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 5000000.0, "recommendedInterestRatePa": 10.5}
+                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 5000000.0, "recommendedInterestRatePa": 10.5, "maxTenureMonths": 36}
                 }
             ]
         }
@@ -60,9 +64,10 @@ def test_risk_policy_hot_reload():
     
     try:
         engine = RiskPolicyEngine(policy_path=tmp_path)
-        band, eligible, max_loan, int_rate = engine.get_risk_tier(800, is_ntc=False)
+        band, eligible, max_loan, int_rate, max_tenure = engine.get_risk_tier(800, is_ntc=False)
         assert band == "PRIME_LOW_RISK"
         assert int_rate == 10.5
+        assert max_tenure == 36
         
         # Modify file on disk with new interest rate (e.g. RBI rate drop to 9.25%) and new cutoff (700)
         time.sleep(0.1) # ensure mtime advances
@@ -73,7 +78,7 @@ def test_risk_policy_hot_reload():
                     "name": "PRIME_LOW_RISK",
                     "minScore": 700,
                     "maxScore": 1000,
-                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 7500000.0, "recommendedInterestRatePa": 9.25}
+                    "ocenEligibility": {"isEligible": True, "maxLoanAmountInr": 7500000.0, "recommendedInterestRatePa": 9.25, "maxTenureMonths": 48}
                 }
             ]
         }
@@ -81,10 +86,11 @@ def test_risk_policy_hot_reload():
             yaml.dump(updated_policy, f)
             
         # Call get_risk_tier without re-initializing engine
-        band, eligible, max_loan, int_rate = engine.get_risk_tier(720, is_ntc=False)
+        band, eligible, max_loan, int_rate, max_tenure = engine.get_risk_tier(720, is_ntc=False)
         assert band == "PRIME_LOW_RISK"
         assert max_loan == 7500000.0
         assert int_rate == 9.25
+        assert max_tenure == 48
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
@@ -94,6 +100,7 @@ def test_risk_policy_fallback():
     AUDIT-T3-1: Verify graceful fallback when policy file is missing or invalid YAML.
     """
     engine = RiskPolicyEngine(policy_path="/non/existent/path/policy.yaml")
-    band, eligible, max_loan, int_rate = engine.get_risk_tier(800, is_ntc=False)
+    band, eligible, max_loan, int_rate, max_tenure = engine.get_risk_tier(800, is_ntc=False)
     assert band == "PRIME_LOW_RISK"
     assert int_rate == 10.5
+    assert max_tenure == 36

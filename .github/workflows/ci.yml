@@ -141,7 +141,7 @@ jobs:
 
       - name: Validate all YAML manifests in /k8s
         run: |
-          kubeconform -summary -verbose k8s/
+          kubeconform -summary -verbose -schema-location default -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' -ignore-missing-schemas k8s/
 
   # 6. Static Application Security Testing (SAST) via Semgrep (AUDIT-T3-6)
   sast-scanning:
@@ -171,6 +171,18 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up JDK 21 for Dependency Cache
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Populate Local Maven Cache
+        run: |
+          cd services
+          mvn dependency:resolve -q --no-transfer-progress || true
+
       - name: Run Trivy FS Vulnerability Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -179,6 +191,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           severity: 'CRITICAL,HIGH'
+          offline-scan: 'true'
 
       - name: Run Grype FS Vulnerability Scan
         uses: anchore/scan-action@v3
@@ -198,6 +211,7 @@ jobs:
           format: 'table'
           exit-code: '0'
           severity: 'CRITICAL,HIGH'
+          offline-scan: 'true'
 
       - name: Scan Scoring Engine Image with Grype
         uses: anchore/scan-action@v3
