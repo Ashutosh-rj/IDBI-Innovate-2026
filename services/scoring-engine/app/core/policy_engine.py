@@ -82,6 +82,37 @@ class RiskPolicyEngine:
                 "payrollStabilityScore": 0.15,
                 "businessVintageScore": 0.15,
                 "liquidityBufferScore": 0.15
+            },
+            "scoringWeights": {
+                "chequeBouncePenalty": -30.0,
+                "chequeCleanBonus": 20.0,
+                "ntcThinFileBaseline": 65.0,
+                "liquidityBaseline": 70.0,
+                "odUtilBonus": 10.0,
+                "odUtilThreshold": 0.70,
+                "shapPointsMultiplier": 60.0,
+                "domainMultipliers": {
+                    "gstRegularity": 80.0,
+                    "gstGrowthBonus": 10.0,
+                    "gstItcBonus": 10.0,
+                    "payrollRegularity": 85.0,
+                    "payrollGrowthBonus": 15.0,
+                    "payrollUncoveredBaseline": 60.0,
+                    "vintageMaxMonths": 36.0,
+                    "vintagePanMatchBonus": 20.0,
+                    "vintageLinkedAccBonus": 20.0,
+                    "cfVolumeMaxCap": 60.0,
+                    "cfVolumeDivisor": 500.0,
+                    "cfRatioHighBonus": 25.0,
+                    "cfRatioModBonus": 15.0,
+                    "cfPayersBonus": 15.0
+                },
+                "simulationCoefficients": {
+                    "gstrWeight": 0.45,
+                    "odUtilWeight": 0.50,
+                    "bounceWeight": 30.0,
+                    "epfWeight": 0.30
+                }
             }
         }
 
@@ -102,6 +133,16 @@ class RiskPolicyEngine:
             logger.warning("Policy weights do not sum to 1.0, using default weights", total=total)
             return default_weights
         return weights
+
+    def get_scoring_weights(self) -> Dict[str, Any]:
+        """Returns externalized scoring weights and multipliers from the policy."""
+        policy = self._load_policy()
+        default_sw = self._get_default_policy()["scoringWeights"]
+        sw = policy.get("scoringWeights", default_sw)
+        if not isinstance(sw, dict):
+            logger.warning("Scoring weights format invalid, using default scoring weights", weights=sw)
+            return default_sw
+        return sw
 
     def get_risk_tier(self, score: int, is_ntc: bool) -> Tuple[str, bool, float, float]:
         """

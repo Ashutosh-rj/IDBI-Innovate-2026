@@ -261,44 +261,56 @@ class HealthScorer:
     def _calc_subscore_gst(self, f: Dict[str, float]) -> float:
         reg = f.get("gst_filing_regularity")
         if math.isnan(reg): return 50.0 # Neutral NTC default
-        score = reg * 80.0
-        if f.get("gst_turnover_yoy_growth", 0.0) > 0: score += 10.0
-        if f.get("gst_itc_mismatch_flag", 0.0) == 0.0: score += 10.0
+        sw = policy_engine.get_scoring_weights()
+        dm = sw.get("domainMultipliers", {})
+        score = reg * float(dm.get("gstRegularity", 80.0))
+        if f.get("gst_turnover_yoy_growth", 0.0) > 0: score += float(dm.get("gstGrowthBonus", 10.0))
+        if f.get("gst_itc_mismatch_flag", 0.0) == 0.0: score += float(dm.get("gstItcBonus", 10.0))
         return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_cf(self, f: Dict[str, float]) -> float:
         vol = f.get("upi_monthly_volume_avg")
         if math.isnan(vol): return 50.0
-        score = min(60.0, (vol / 500.0) * 60.0)
+        sw = policy_engine.get_scoring_weights()
+        dm = sw.get("domainMultipliers", {})
+        max_cap = float(dm.get("cfVolumeMaxCap", 60.0))
+        divisor = float(dm.get("cfVolumeDivisor", 500.0))
+        score = min(max_cap, (vol / divisor) * max_cap)
         ratio = f.get("upi_credit_debit_ratio", 1.0)
-        if ratio > 1.1: score += 25.0
-        elif ratio > 0.95: score += 15.0
-        if f.get("upi_unique_payers_avg", 0.0) > 20: score += 15.0
+        if ratio > 1.1: score += float(dm.get("cfRatioHighBonus", 25.0))
+        elif ratio > 0.95: score += float(dm.get("cfRatioModBonus", 15.0))
+        if f.get("upi_unique_payers_avg", 0.0) > 20: score += float(dm.get("cfPayersBonus", 15.0))
         return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_pay(self, f: Dict[str, float]) -> float:
         cov = f.get("epfo_covered_flag")
-        if math.isnan(cov) or cov == 0.0: return 60.0 # Uncovered micro firms get neutral 60
+        sw = policy_engine.get_scoring_weights()
+        dm = sw.get("domainMultipliers", {})
+        if math.isnan(cov) or cov == 0.0: return float(dm.get("payrollUncoveredBaseline", 60.0))
         reg = f.get("epfo_contribution_regularity", 0.0)
-        score = reg * 85.0
-        if f.get("epfo_member_growth_rate", 0.0) >= 0: score += 15.0
+        score = reg * float(dm.get("payrollRegularity", 85.0))
+        if f.get("epfo_member_growth_rate", 0.0) >= 0: score += float(dm.get("payrollGrowthBonus", 15.0))
         return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_dig(self, f: Dict[str, float]) -> float:
         vint = f.get("udyam_vintage_months", 12.0)
         if math.isnan(vint): return 50.0
-        score = min(60.0, (vint / 36.0) * 60.0)
-        if f.get("pan_gstin_match_flag", 0.0) == 1.0: score += 20.0
-        if f.get("linked_account_count", 0.0) > 0: score += 20.0
+        sw = policy_engine.get_scoring_weights()
+        dm = sw.get("domainMultipliers", {})
+        max_months = float(dm.get("vintageMaxMonths", 36.0))
+        score = min(60.0, (vint / max_months) * 60.0)
+        if f.get("pan_gstin_match_flag", 0.0) == 1.0: score += float(dm.get("vintagePanMatchBonus", 20.0))
+        if f.get("linked_account_count", 0.0) > 0: score += float(dm.get("vintageLinkedAccBonus", 20.0))
         return self._clamp_and_round_subscore(score)
 
     def _calc_subscore_cr(self, f: Dict[str, float]) -> float:
-        if f.get("ntc_thin_file_flag", 0.0) == 1.0: return 65.0 # NTC thin-file baseline
-        score = 70.0
-        if f.get("aa_bounce_flag", 0.0) == 0.0: score += 20.0
-        else: score -= 30.0
+        sw = policy_engine.get_scoring_weights()
+        if f.get("ntc_thin_file_flag", 0.0) == 1.0: return float(sw.get("ntcThinFileBaseline", 65.0))
+        score = float(sw.get("liquidityBaseline", 70.0))
+        if f.get("aa_bounce_flag", 0.0) == 0.0: score += float(sw.get("chequeCleanBonus", 20.0))
+        else: score += float(sw.get("chequeBouncePenalty", -30.0))
         od_util = f.get("aa_od_limit_utilization", 0.0)
-        if od_util < 0.7: score += 10.0
+        if od_util < float(sw.get("odUtilThreshold", 0.70)): score += float(sw.get("odUtilBonus", 10.0))
         return self._clamp_and_round_subscore(score)
 
     def _get_risk_tier(self, score: int, is_ntc: bool):

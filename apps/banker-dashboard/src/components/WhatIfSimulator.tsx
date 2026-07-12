@@ -35,12 +35,18 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ msme, onClose 
           setNewRiskBand(res.simulated.riskBand);
         }
       } catch (err) {
-        // Fallback calculation if offline
+        // Fallback calculation if offline using dynamic coefficients from external policy layer or defaults
+        const coeffs = msme.simulationCoefficients || {};
+        const gstrW = coeffs.gstrWeight ?? 0.45;
+        const odW = coeffs.odUtilWeight ?? 0.50;
+        const bounceW = coeffs.bounceWeight ?? 30.0;
+        const epfW = coeffs.epfWeight ?? 0.30;
+
         const gstrDiff = (gstr3b - msme.keyMetrics.gstr3bRegularity * 100);
         const odDiff = (msme.keyMetrics.odUtilization * 100 - odUtil);
         const bounceDiff = (msme.keyMetrics.chequeBounces - bounces);
         const epfDiff = (epfMembers - msme.keyMetrics.epfActiveMembers);
-        const deltaFallback = Math.round(gstrDiff * 0.45 + odDiff * 0.50 + bounceDiff * 30 + epfDiff * 0.30);
+        const deltaFallback = Math.round(gstrDiff * gstrW + odDiff * odW + bounceDiff * bounceW + epfDiff * epfW);
         const simScore = Math.min(900, Math.max(300, msme.healthScore + deltaFallback));
         if (isMounted) {
           setSimulatedScore(simScore);

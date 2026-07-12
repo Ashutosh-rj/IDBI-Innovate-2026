@@ -43,11 +43,13 @@ class CreditFeatureExtractor(FeatureExtractor):
         credits = [float(t.get("amount", 0.0)) for t in txns if t.get("type") == "CREDIT"]
         avg_monthly_credit = float(np.sum(credits) / 24.0) if credits else 0.0
 
-        # Check for bounce or return narrations
+        # Check for structured bounce transaction codes or return/dishonour narrations
         bounce = 0.0
         for t in txns:
+            txn_type = str(t.get("type", "")).upper()
+            sub_type = str(t.get("subType", "")).upper()
             narr = str(t.get("narration", "")).upper()
-            if "BOUNCE" in narr or "RETURN" in narr or "DISHONOUR" in narr:
+            if txn_type == "BOUNCE" or sub_type == "CHQ_BOUNCE" or "BOUNCE" in narr or "RETURN" in narr or "DISHONOUR" in narr:
                 bounce = 1.0
                 break
 

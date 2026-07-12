@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, Optional
 from models.scorer import HealthScorer
 from core.config import settings
+from core.policy_engine import policy_engine
 import structlog
 
 logger = structlog.get_logger()
@@ -58,7 +59,8 @@ def _run_what_if_sync(base_payload: Dict[str, Any], overrides: Dict[str, float])
             "subScores": sim_result["subScores"]
         },
         "scoreDelta": sim_result["healthScore"] - base_result["healthScore"],
-        "appliedOverrides": overrides
+        "appliedOverrides": overrides,
+        "simulationCoefficients": policy_engine.get_scoring_weights().get("simulationCoefficients", {})
     }
 
 @router.post("/", summary="Run What-If Simulation by Dynamically Modifying Features")

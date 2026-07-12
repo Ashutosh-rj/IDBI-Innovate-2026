@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from core.policy_engine import policy_engine
 
 # RBI & Bank-Audit compliant plain-language reason code catalog
 # Every feature used by the ML model maps to an explanation template and actionable advice.
@@ -116,7 +117,8 @@ def get_reason_code(feature_name: str, shap_value: float) -> Dict[str, Any]:
     # In default probability model, shap_value < 0 lowers default risk (improves health score -> POSITIVE impact).
     # shap_value >= 0 increases default risk (lowers health score -> NEGATIVE impact).
     is_favorable = shap_value < 0
-    points_impact = max(1, int(round(abs(shap_value) * 60.0)))
+    sw = policy_engine.get_scoring_weights()
+    points_impact = max(1, int(round(abs(shap_value) * float(sw.get("shapPointsMultiplier", 60.0)))))
     
     explanation = catalog_entry["positive"] if is_favorable else catalog_entry["negative"]
     if not is_favorable and abs(shap_value) > 0.005:

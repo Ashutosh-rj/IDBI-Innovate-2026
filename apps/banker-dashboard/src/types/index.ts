@@ -42,6 +42,12 @@ export interface MsmeProfile {
     epfActiveMembers: number;
     chequeBounces: number;
   };
+  simulationCoefficients?: {
+    gstrWeight?: number;
+    odUtilWeight?: number;
+    bounceWeight?: number;
+    epfWeight?: number;
+  };
 }
 
 export interface WhatIfSimulation {

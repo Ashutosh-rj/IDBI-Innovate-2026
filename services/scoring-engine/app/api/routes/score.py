@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, List
 from models.scorer import HealthScorer
 from core.config import settings
 from core.redis_pool import redis_pool
+from core.policy_engine import policy_engine
 import structlog
 
 logger = structlog.get_logger()
@@ -43,6 +44,8 @@ async def compute_health_score(request: ScoringRequest, background_tasks: Backgr
         if cached_res:
             logger.info("Serving score from non-blocking async Redis cache", msme_id=msme_id)
             cached_res["cached"] = True
+            if "simulationCoefficients" not in cached_res:
+                cached_res["simulationCoefficients"] = policy_engine.get_scoring_weights().get("simulationCoefficients", {})
             return cached_res
             
     # Step 2: Offload CPU-bound feature extraction, LightGBM inference & TreeSHAP to worker thread
@@ -50,6 +53,7 @@ async def compute_health_score(request: ScoringRequest, background_tasks: Backgr
         raw_payload = request.model_dump()
         score_result = await asyncio.to_thread(scorer.compute_score, raw_payload)
         score_result["cached"] = False
+        score_result["simulationCoefficients"] = policy_engine.get_scoring_weights().get("simulationCoefficients", {})
         
         # Step 3: Cache result asynchronously via background task to prevent blocking the HTTP response
         background_tasks.add_task(
